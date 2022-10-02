@@ -1,15 +1,15 @@
 # ********************************************************
-# Key Arguments
+# * Key Arguments
 # ********************************************************
 ARG PYTHON_VERSION=3.9
-ARG PYTHON_VENV=/opt/venv
 ARG DAGGER_VERSION=0.2.30
-ARG DEBIAN_FRONTEND=noninteractive
+ARG PYTHON_VENV=/opt/venv
+ARG APP_NAME='app'
+ARG APP_PATH="/${APP_NAME}"
 ARG USERNAME=jmjr
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
-ARG APP_NAME='app'
-ARG APP_PATH="/${APP_NAME}"
+ARG DEBIAN_FRONTEND=noninteractive
 
 # ********************************************************
 # * Python Virtual Environment
@@ -44,20 +44,16 @@ RUN pip-sync requirements.txt --pip-args '--no-cache-dir'
 FROM python:${PYTHON_VERSION}-slim as base
 
 ARG PYTHON_VENV
-ARG PYTHON_VERSION
-ARG MINIZINC_HOME
-ARG DEBIAN_FRONTEND
-ARG USERNAME
-ARG USER_GID
-ARG USER_UID
-
 ENV VIRTUAL_ENV=$PYTHON_VENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-
 
 # ********************************************************
 # * Add a non-root user
 # ********************************************************
+ARG USERNAME
+ARG USER_GID
+ARG USER_UID
+
 RUN groupadd --gid $USER_GID $USERNAME \
     && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
     && apt-get update \
@@ -78,10 +74,10 @@ RUN groupadd --gid $USER_GID $USERNAME \
 # ********************************************************
 FROM base as dev
 
-ARG DEBIAN_FRONTEND
 ARG USERNAME
 ARG USER_UID
 ARG USER_GID
+ARG DEBIAN_FRONTEND
 
 USER root
 
@@ -95,9 +91,8 @@ RUN apt-get update \
         wget \
     && rm -rf /var/lib/apt/lists/*
 
-
 # ********************************************************
-# * Install Docker
+# * Install Docker / Compose
 # ********************************************************
 # Install Docker CE CLI
 RUN curl -fsSL https://download.docker.com/linux/$(lsb_release -is | tr '[:upper:]' '[:lower:]')/gpg | apt-key add - 2>/dev/null \
@@ -114,7 +109,6 @@ RUN LATEST_COMPOSE_VERSION=$(curl -sSL "https://api.github.com/repos/docker/comp
 # Give docker access to the non-root user
 RUN groupadd docker && usermod -aG docker $USERNAME
 
-
 # ********************************************************
 # * Install Dagger - TODO: pin version, should be refreshed to due to ARG
 # ********************************************************
@@ -122,7 +116,6 @@ ARG DAGGER_VERSION
 RUN curl -sfL https://releases.dagger.io/dagger/install.sh | sh \
     && mv ./bin/dagger /usr/local/bin \
     && echo $DAGGER_VERSION
-
 
 # ********************************************************
 # * Install Developer packages
@@ -148,16 +141,15 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
     -p git \
     -p docker \
     -p https://github.com/zsh-users/zsh-autosuggestions \
-    -p https://github.com/zsh-users/zsh-completions \
-    -a "[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh"
+    -p https://github.com/zsh-users/zsh-completions && \
+    echo "[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh" >> ~/.zshrc
 
 # ********************************************************
 # * Install Python dependencies
 # ********************************************************
 COPY --chown=$USERNAME --from=venv-dev ${PYTHON_VENV} ${PYTHON_VENV}
-
-USER $USERNAME 
 CMD zsh
+
 
 # ********************************************************
 # * Test 
@@ -174,8 +166,9 @@ ARG USER_UID
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-COPY ./${APP_NAME} ./tests ./pytest.ini .
+COPY ./src ./tests ./pytest.ini .
 COPY --chown=$USERNAME --from=venv-test ${PYTHON_VENV} ${PYTHON_VENV}
+USER $USERNAME
 CMD pytest
 
 
@@ -197,8 +190,6 @@ ENV PYTHONUNBUFFERED 1
 USER root
 RUN mkdir $APP_PATH
 WORKDIR $APP_PATH
-COPY ./${APP_NAME} ./${APP_NAME}
-RUN chown -R $USER_UID:$USER_GID $APP_PATH
-
-USER $USERNAME
+COPY ./src .
 COPY --chown=$USERNAME --from=venv-prod ${PYTHON_VENV} ${PYTHON_VENV}
+USER $USERNAME
