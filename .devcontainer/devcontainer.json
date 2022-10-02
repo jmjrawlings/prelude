@@ -1,0 +1,84 @@
+{
+    // Name appearing in the bottom left corner
+    "name": "unconstrained",
+                    
+    "build":{
+        "dockerfile": "../Dockerfile",
+        "context": "..",
+        "target": "dev",
+        "args": {
+            "APP_NAME": "scaffold"
+        }
+    },
+        
+    "mounts":[
+        
+        // [Optional] Mount the hosts docker engine
+        // "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
+
+        // [Optional] Use a volume to install VSCode extensions, see https://code.visualstudio.com/remote/advancedcontainers/avoid-extension-reinstalls
+        "source=vscode-extensions,target=/root/.vscode-server/extensions,type=volume"
+    ],
+
+    // VSCode settings inside the container
+    "settings": {
+        
+        // Python location
+        "python.defaultInterpreterPath": "/opt/venv/bin",
+        "python.pythonPath": "/opt/venv/bin",
+        "python.disableInstallationCheck": true,
+                        
+        // Typechecking and linting
+        "python.languageServer": "Pylance",
+        "python.linting.enabled": true,
+        "python.analysis.typeCheckingMode": "basic",
+        "python.analysis.diagnosticSeverityOverrides": {
+            "reportUnboundVariable" : "information", 
+            "reportImplicitStringConcatenation" : "warning" 
+        },
+        
+        // Pytest integration
+        "python.testing.pytestEnabled": true,
+        "python.testing.pytestArgs": ["tests"],
+        "python.testing.unittestEnabled": false,
+        "python.testing.nosetestsEnabled": false,
+                
+        // Zsh Shell
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "terminal.integrated.profiles.linux": {
+            "zsh": {
+              "path": "/bin/zsh",
+              "args": ["-l"]
+            }
+          },
+
+        // Misc
+        "editor.detectIndentation": false,
+        "editor.insertSpaces": true,
+        "telemetry.telemetryLevel" : "off"
+    },
+
+    "extensions": [
+        // Offical python plugin
+		"ms-python.python",
+        // Jupyter notebook integration
+		"ms-toolsai.jupyter",
+        // MiniZinc syntax highlighting
+		"dekkerone.minizinc",
+        // Access workspace via web browser (good for .html)
+        "ritwickdey.liveserver",
+        // Mermaid JS support
+        "bierner.markdown-mermaid",
+        // Dagger LSP
+        "Dagger.dagger"
+	],
+        
+    "runArgs": [ 
+        "--init",
+        "--hostname", "host"
+    ],
+
+    "containerEnv": {
+        "DO_NOT_TRACK" : "1"
+    }
+}
