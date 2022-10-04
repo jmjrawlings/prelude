@@ -1,20 +1,20 @@
 {
     // Name appearing in the bottom left corner
-    "name": "unconstrained",
+    "name": "prelude",
                     
     "build":{
         "dockerfile": "../Dockerfile",
         "context": "..",
-        "target": "dev",
-        "args": {
-            "APP_NAME": "scaffold"
-        }
+        "target": "dev"
     },
+
+    "workspaceFolder": "/app",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/app,type=bind,consistency=cached",
         
     "mounts":[
         
-        // [Optional] Mount the hosts docker engine
-        // "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
+        // Mount the hosts docker engine for dagger
+        "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
 
         // [Optional] Use a volume to install VSCode extensions, see https://code.visualstudio.com/remote/advancedcontainers/avoid-extension-reinstalls
         "source=vscode-extensions,target=/root/.vscode-server/extensions,type=volume"
@@ -23,27 +23,26 @@
     // VSCode settings inside the container
     "settings": {
         
-        // Python location
+        // Python
         "python.defaultInterpreterPath": "/opt/venv/bin",
         "python.pythonPath": "/opt/venv/bin",
         "python.disableInstallationCheck": true,
                         
-        // Typechecking and linting
+        // Typechecking / Linting
         "python.languageServer": "Pylance",
         "python.linting.enabled": true,
         "python.analysis.typeCheckingMode": "basic",
         "python.analysis.diagnosticSeverityOverrides": {
-            "reportUnboundVariable" : "information", 
-            "reportImplicitStringConcatenation" : "warning" 
+            "reportUnboundVariable" : "information" 
         },
         
-        // Pytest integration
+        // Pytest
         "python.testing.pytestEnabled": true,
         "python.testing.pytestArgs": ["tests"],
         "python.testing.unittestEnabled": false,
         "python.testing.nosetestsEnabled": false,
                 
-        // Zsh Shell
+        // ZShell
         "terminal.integrated.defaultProfile.linux": "zsh",
         "terminal.integrated.profiles.linux": {
             "zsh": {
@@ -63,16 +62,14 @@
 		"ms-python.python",
         // Jupyter notebook integration
 		"ms-toolsai.jupyter",
-        // MiniZinc syntax highlighting
-		"dekkerone.minizinc",
         // Access workspace via web browser (good for .html)
         "ritwickdey.liveserver",
         // Mermaid JS support
         "bierner.markdown-mermaid",
-        // Dagger LSP
+        // Dagger Language Server
         "Dagger.dagger"
 	],
-        
+            
     "runArgs": [ 
         "--init",
         "--hostname", "host"

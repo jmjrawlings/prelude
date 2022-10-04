@@ -4,48 +4,23 @@
 ARG PYTHON_VERSION=3.9
 ARG DAGGER_VERSION=0.2.30
 ARG PYTHON_VENV=/opt/venv
-ARG APP_NAME='app'
-ARG APP_PATH="/${APP_NAME}"
+ARG APP_PATH=/app
 ARG USERNAME=jmjr
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 ARG DEBIAN_FRONTEND=noninteractive
 
 # ********************************************************
-# * Python Virtual Environment
+# * Python Builder
 # ********************************************************
-FROM python:${PYTHON_VERSION}-slim as venv-builder
-
+FROM python:${PYTHON_VERSION}-slim as python-builder
 ARG PYTHON_VENV
-ENV VIRTUAL_ENV=PYTHON_VENV
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN python -m venv ${PYTHON_VENV}
-RUN pip install pip-tools
-
-# Dev Venv
-FROM venv-builder as venv-dev
-COPY ./requirements/requirements-dev.txt ./requirements.txt
-RUN pip-sync requirements.txt --pip-args '--no-cache-dir'
-
-# Test Venv
-FROM venv-builder as venv-test
-COPY ./requirements/requirements-test.txt ./requirements.txt
-RUN pip-sync requirements.txt --pip-args '--no-cache-dir'
-
-# Prod Venv
-FROM venv-builder as venv-prod
-COPY ./requirements/requirements-prod.txt ./requirements.txt
-RUN pip-sync requirements.txt --pip-args '--no-cache-dir'
-
 
 # ********************************************************
 # * Base Layer
 # ********************************************************
 FROM python:${PYTHON_VERSION}-slim as base
-
-ARG PYTHON_VENV
-ENV VIRTUAL_ENV=$PYTHON_VENV
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 # ********************************************************
 # * Add a non-root user
@@ -74,12 +49,19 @@ RUN groupadd --gid $USER_GID $USERNAME \
 # ********************************************************
 FROM base as dev
 
+ARG PYTHON_VENV
 ARG USERNAME
 ARG USER_UID
 ARG USER_GID
 ARG DEBIAN_FRONTEND
 
 USER root
+
+# Install python virtual env
+COPY --from=python-builder --chown=$USER_UID:$USER_GID $PYTHON_VENV $PYTHON_VENV
+ENV VIRTUAL_ENV=$PYTHON_VENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+RUN pip install pip-tools
 
 # Install packages
 RUN apt-get update \
@@ -147,7 +129,9 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
 # ********************************************************
 # * Install Python dependencies
 # ********************************************************
-COPY --chown=$USERNAME --from=venv-dev ${PYTHON_VENV} ${PYTHON_VENV}
+COPY ./requirements/requirements-dev.txt ./requirements.txt
+RUN pip-sync ./requirements.txt
+
 CMD zsh
 
 
@@ -167,7 +151,8 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
 COPY ./src ./tests ./pytest.ini .
-COPY --chown=$USERNAME --from=venv-test ${PYTHON_VENV} ${PYTHON_VENV}
+COPY ./requirements/requirements-test.txt ./requirements.txt
+RUN pip install --no-cache-dir ./requirements.txt
 USER $USERNAME
 CMD pytest
 
@@ -190,6 +175,8 @@ ENV PYTHONUNBUFFERED 1
 USER root
 RUN mkdir $APP_PATH
 WORKDIR $APP_PATH
+COPY ./requirements/requirements-prod.txt ./requirements.txt
+RUN pip install --no-cache-dir ./requirements.txt
 COPY ./src .
-COPY --chown=$USERNAME --from=venv-prod ${PYTHON_VENV} ${PYTHON_VENV}
+
 USER $USERNAME

@@ -1,172 +1,206 @@
-# %%
-%pip install attrs cattrs pandas pendulum
-
-# %%
-from typing import List, Tuple, Optional, Union
+from typing import List, Tuple, Optional, Union, Type, TypeVar, Dict
 from pandas import DataFrame, Series
-from pendulum import DateTime, Date
+from pendulum.datetime import DateTime
+from pendulum.date import Date
 import pendulum as pn
 from attrs import define, field
 from pathlib import Path
 import pandas as pd
+from pandas import DataFrame
 import json
 import attrs
 import cattrs
+from tempfile import mkdtemp
 
-converter = cattrs.Converter()
-converter.register_unstructure_hook(DateTime, lambda dt: dt.timestamp())
-converter.register_structure_hook(DateTime, lambda ts, _: pn.from_timestamp(ts))
+def create_cattrs_converter():
 
-# %%
+    def unstructure_datetime(dt: DateTime):
+        return dt.timestamp()
+
+    def structure_datetime(timestamp, _):
+        return pn.from_timestamp(timestamp)
+
+    converter = cattrs.Converter()
+    converter.register_unstructure_hook(DateTime, unstructure_datetime)
+    converter.register_structure_hook(DateTime, structure_datetime)
+    return converter
+
+converter = create_cattrs_converter()
+
+M = TypeVar("M", bound='Model')
+
 @define
 class Model:
-    id         : int       = field(default=0)
-    name       : str       = field(default='')
-    created_at : DateTime  = field(factory=pn.now)
-    df_a       : DataFrame = field(factory=DataFrame)
-    df_b       : DataFrame = field(factory=DataFrame)
-        
-    def save(self, path: Path) -> Path:
+    """
+    A base model to inherit from
+    """
+    
+    def to_dict(self) -> Dict:
         """
-        Save this model to disk
+        Convert instance to a dictionary, no
+        conversion will occur
         """
+        return cattrs.unstructure(self)
+
+    def to_json_dict(self) -> Dict:
+        """
+        Convert this instance to a JSON compatible
+        dictionary
+        """
+        return converter.unstructure(self)
+
+    def to_json_string(self) -> str:
+        """
+        Convert this instance to a JSON string
+        """
+        record = self.to_json_dict()
+        string = json.dumps(record)
+        return string
+
+    def to_json_file(self, path: Union[str, Path], overwrite=True) -> Path:
         path = Path(path)
-        path.mkdir(parents=True, exist_ok=True)
+        record = self.to_json_dict()
+        if path.exists() and not overwrite:
+            raise Exception(f'File already exists at "{path}" - use `overwrite=True` to overwrite')
 
-        t = pn.now()
-        
-        # Convert this instance into a dictionary
-        record = converter.unstructure(self)
-                        
-        # Look for DataFrame fields of the class 
-        for fieldname in Model.get_dataframe_fields():
-            # Write the dataframe out to the folder
-            df : DataFrame = record[fieldname]
-            csv_path = path / f'{fieldname}.csv'
-            df.to_csv(csv_path, index=False)
-            
-            # Remove it from the record structure
-            record.pop(fieldname)
-            print(f'model: "{self.name}" wrote "{fieldname}" with {df.shape[0]:,} rows to {csv_path}')
-
-        # Write the partial model to json
-        json_path = path / 'model.json'
-        with json_path.open('w') as file:
+        with path.open('w') as file:
             json.dump(record, file)
 
-        print(f'model: "{self.name}" wrote json to {json_path}')
-
-        elapsed = (pn.now() - t).in_words()
-        print(f'model: "{self.name}" saved to {path} in {elapsed}')
         return path
 
     @classmethod
-    def load(cls, path : Path) -> "Model":
+    def from_dict(cls: Type[M], record) -> M:
+        instance = cattrs.structure(record, cls)
+        return instance
+
+    @classmethod
+    def from_json_dict(cls: Type[M], record) -> M:
+        instance = converter.structure(record, cls)
+        return instance        
+
+    @classmethod
+    def from_json_string(cls: Type[M], string) -> M:
+        record = json.loads(string)
+        instance = cls.from_dict(record)
+        return instance
+
+    @classmethod        
+    def from_json_file(cls: Type[M], path: Union[str, Path]) -> M:
+        path = Path(path)
+        with path.open('r') as file:
+            record = json.load(file)
+        model = cls.from_json_dict(record)
+        return model
+
+    def save(self, path: Union[str, Path], overwrite=True) -> Path:
+        """
+        Save this class to the given file
+        """
+        
+        t = pn.now()
+        path = Path(path)
+                        
+        # Convert this instance into a dictionary
+        record = converter.unstructure(self)
+                        
+        # Look for DataFrame fields of the class
+        df_fields = self._get_fields_of_type(DataFrame)
+        if not df_fields:
+            path = self.to_json_file(path, overwrite=overwrite)
+        else:
+            
+            path.mkdir(parents=True, exist_ok=overwrite)
+
+            for field in df_fields:
+                name = field.name
+
+                # Write the dataframe out to the folder
+                df : DataFrame = record[name]
+                df_path = path / f'{name}.csv'
+                df.to_csv(df_path, index=False)
+                
+                # Remove it from the record structure
+                record.pop(name)
+                self._log(f'{name} saved to {df_path} ({df.shape[0]:,} rows, {df.shape[1]:,} cols)')
+
+            # Write the partial model to json
+            record_path = path / 'model.json'
+            with record_path.open('w') as file:
+                json.dump(record, file)
+                self._log(f'record saved to {record_path}')
+
+        elapsed = (pn.now() - t).in_words()
+        self._log(f'model saved to {path} in {elapsed}')
+        return path
+
+    @classmethod
+    def load(cls : Type[M], path : Union[Path,str]) -> M:
         """
         Load a Model instance from disk
         """
-        
+                
         path = Path(path)
-        assert path.is_dir(), f'Path must be a directory'
+
+        if not path.exists():
+            raise FileNotFoundError(f'{path} does not exist.')
+
         t = pn.now()
         
+        # Assume only the .json was given
+        if path.is_file():
+            with path.open('r') as file:
+                record = json.load(file)
+                instance = cls.from_json_dict(record)
+            return instance
+
         # Load the model json
-        json_path = path / 'model.json'
-        with json_path.open('r') as file:
+        record_path = path / 'model.json'
+        with record_path.open('r') as file:
             record = json.load(file)
 
         model = converter.structure(record, cls)
-        print(f'model: "{model.name}" read json from {json_path}')
-        
-        # Load the dataframes
-        for fieldname in Model.get_dataframe_fields():
-            # Write the dataframe out to the folder
-            csv_path = path / f'{fieldname}.csv'
-            df = pd.read_csv(csv_path)
-
-            print(f'model: "{model.name}" read "{fieldname}" with {df.shape[0]} rows from {csv_path}')
+        cls._log(f'record loaded from {record_path}')
+                
+        # Load the each dataframe field
+        for field in cls._get_fields_of_type(DataFrame):
+            name = field.name
+            df_path = path / f'{name}.csv'
+            df = DataFrame()
+            if df_path.exists():
+                try:
+                    df = pd.read_csv(df_path)
+                except:
+                    pass
+            
+            cls._log(f'{name} loaded from {df_path} ({df.shape[0]:,} rows x {df.shape[1]:,} cols)')
 
             # Store it on the model
-            setattr(model, fieldname, df)
+            setattr(model, name, df)
 
         elapsed = (pn.now() - t).in_words()
-
-        print(f'model: "{model.name}" loaded from {path} in {elapsed}')
-        # Create the model from record
+        
+        cls._log(f'model loaded from {path} in {elapsed}')
         return model
 
 
-    def copy(self):
+    def copy(self : M) -> M:
         """
-        Return a deep copy of this model by saving
-        to disk and loading from disk
+        Return a deep copy of this model by
+        saving and loading from json
         """
-        from tempfile import mkdtemp
-        temp_dir = mkdtemp()
-        path = self.save(temp_dir)
-        model = self.load(path)
+        json_string = self.to_json_string()
+        model = self.from_json_string(json_string)
         return model
 
     @classmethod
-    def get_dataframe_fields(cls):
+    def _log(cls: Type[M], *args, **kwargs):
+        print(f'{cls.__name__}:', *args)
+
+    @classmethod
+    def _get_fields_of_type(cls, type):
         fields = []
         for field in attrs.fields(cls):
-            if field.type != DataFrame:
+            if field.type != type:
                 continue
-            fields.append(field.name)
+            fields.append(field)
         return fields
-           
-    
-    def __str__(self):
-        return f'Model "{self.name} with A({self.df_a.shape[0]} rows) and B({self.df_b.shape[0]} rows)'
-
-    def __repr__(self):
-        return f'<{self!s}>'
-
-# %%
-def create_model(id, name):
-    df_a = DataFrame(dict(a=[1,2,3], b=[2,3,4]))
-    df_b = DataFrame(dict(c=[1,2,3], d=[2,3,4]))
-    model = Model(
-        id=id,
-        name=name,
-        df_a=df_a,
-        df_b=df_b
-    )
-    print(f'created {model!r}')
-    return model
-
-
-
-
-# %%
-
-# Create a sample model
-model1 = create_model(1, 'model1')
-# Save it to disk
-path = model1.save('model1')
-# Load it from disk
-model2 = Model.load(path)
-# Models are different objects
-assert id(model1) != id(model2)
-# Compare dataframes
-for field in Model.get_dataframe_fields():
-    df1 = getattr(model1, field)
-    df2 = getattr(model2, field)
-
-    # They are different objects
-    assert id(df1) != id(df2)
-
-    # But the same values
-    assert df1.equals(df2)
-
-# Edit the model and save
-model2.name = 'model2'
-model2.df_a['a'] = 1
-model2.save('model2')
-
-# Make a deep copy
-model3 = model2.copy()
-
-
-# %%
