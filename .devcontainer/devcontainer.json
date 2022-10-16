@@ -5,7 +5,10 @@
     "build":{
         "dockerfile": "../Dockerfile",
         "context": "..",
-        "target": "dev"
+        "target": "dev",
+        "args": {
+            "USER_NAME": "jmjr"
+        }
     },
 
     "workspaceFolder": "/app",

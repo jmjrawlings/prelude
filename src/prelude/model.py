@@ -2,6 +2,7 @@ from typing import List, Tuple, Optional, Union, Type, TypeVar, Dict
 from pandas import DataFrame, Series
 from pendulum.datetime import DateTime
 from pendulum.date import Date
+from pendulum.period import Period
 import pendulum as pn
 from attrs import define, field
 from pathlib import Path
@@ -129,7 +130,7 @@ class Model:
                 json.dump(record, file)
                 self._log(f'record saved to {record_path}')
 
-        elapsed = (pn.now() - t).in_words()
+        elapsed : T= (pn.now() - t).in_words()
         self._log(f'model saved to {path} in {elapsed}')
         return path
 

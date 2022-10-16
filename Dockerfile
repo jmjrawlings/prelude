@@ -5,7 +5,7 @@ ARG PYTHON_VERSION=3.9
 ARG DAGGER_VERSION=0.2.30
 ARG PYTHON_VENV=/opt/venv
 ARG APP_PATH=/app
-ARG USERNAME=jmjr
+ARG USER_NAME=jmjr
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 ARG DEBIAN_FRONTEND=noninteractive
@@ -22,19 +22,24 @@ RUN python -m venv ${PYTHON_VENV}
 # ********************************************************
 FROM python:${PYTHON_VERSION}-slim as base
 
-# ********************************************************
-# * Add a non-root user
-# ********************************************************
-ARG USERNAME
+ARG USER_NAME
 ARG USER_GID
 ARG USER_UID
 
-RUN groupadd --gid $USER_GID $USERNAME \
-    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1
+ENV PIP_NO_CACHE_DIR=1
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# ********************************************************
+# * Add a non-root user
+# ********************************************************
+RUN groupadd --gid ${USER_GID} ${USER_NAME} \
+    && useradd --uid ${USER_UID} --gid ${USER_GID} -m ${USER_NAME} \
     && apt-get update \
     && apt-get install -y sudo \
-    && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
-    && chmod 0440 /etc/sudoers.d/$USERNAME
+    && echo $USER_NAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USER_NAME} \
+    && chmod 0440 /etc/sudoers.d/${USER_NAME}
 
 
 # ********************************************************
@@ -50,7 +55,7 @@ RUN groupadd --gid $USER_GID $USERNAME \
 FROM base as dev
 
 ARG PYTHON_VENV
-ARG USERNAME
+ARG USER_NAME
 ARG USER_UID
 ARG USER_GID
 ARG DEBIAN_FRONTEND
@@ -58,9 +63,9 @@ ARG DEBIAN_FRONTEND
 USER root
 
 # Install python virtual env
-COPY --from=python-builder --chown=$USER_UID:$USER_GID $PYTHON_VENV $PYTHON_VENV
+COPY --from=python-builder --chown=${USER_UID}:${USER_GID} ${PYTHON_VENV} ${PYTHON_VENV}
 ENV VIRTUAL_ENV=$PYTHON_VENV
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
 RUN pip install pip-tools
 
 # Install packages
@@ -89,7 +94,8 @@ RUN LATEST_COMPOSE_VERSION=$(curl -sSL "https://api.github.com/repos/docker/comp
     && chmod +x /usr/local/bin/docker-compose
 
 # Give docker access to the non-root user
-RUN groupadd docker && usermod -aG docker $USERNAME
+RUN groupadd docker \
+    && usermod -aG docker ${USER_NAME}
 
 # ********************************************************
 # * Install Dagger - TODO: pin version, should be refreshed to due to ARG
@@ -97,7 +103,7 @@ RUN groupadd docker && usermod -aG docker $USERNAME
 ARG DAGGER_VERSION
 RUN curl -sfL https://releases.dagger.io/dagger/install.sh | sh \
     && mv ./bin/dagger /usr/local/bin \
-    && echo $DAGGER_VERSION
+    && echo ${DAGGER_VERSION}
 
 # ********************************************************
 # * Install Developer packages
@@ -117,8 +123,8 @@ RUN apt-get update \
 # ********************************************************
 # * Install zsh & oh-my-zsh
 # ********************************************************
-USER $USERNAME
-COPY .devcontainer/.p10k.zsh /home/$USERNAME/.p10k.zsh
+USER ${USER_NAME}
+COPY .devcontainer/.p10k.zsh /home/$USER_NAME/.p10k.zsh
 RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/v1.1.3/zsh-in-docker.sh)" -- \
     -p git \
     -p docker \
@@ -144,16 +150,18 @@ CMD zsh
 FROM base as test
 
 ARG APP_PATH
-ARG USERNAME
+ARG USER_NAME
 ARG USER_GID
 ARG USER_UID
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-COPY ./src ./tests ./pytest.ini .
+USER ${USER_NAME}
+COPY ./src .
+COPY ./tests .
+COPY ./pytest.ini .
 COPY ./requirements/requirements-test.txt ./requirements.txt
-RUN pip install --no-cache-dir ./requirements.txt
-USER $USERNAME
+RUN pip-sync ./requirements.txt
 CMD pytest
 
 
@@ -166,17 +174,14 @@ CMD pytest
 FROM base as prod
 
 ARG APP_PATH
-ARG USERNAME
+ARG USER_NAME
 ARG USER_GID
 ARG USER_UID
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
 
-USER root
-RUN mkdir $APP_PATH
-WORKDIR $APP_PATH
-COPY ./requirements/requirements-prod.txt ./requirements.txt
-RUN pip install --no-cache-dir ./requirements.txt
+ENV PYTHONOPTIMIZE=2
+ENV PYTHONDONTWRITEBYTECODE=0
+
+USER ${USER_NAME}
 COPY ./src .
-
-USER $USERNAME
+COPY ./requirements/requirements-prod.txt ./requirements.txt
+RUN pip-sync ./requirements.txt
