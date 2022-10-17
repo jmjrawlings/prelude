@@ -4,7 +4,7 @@ from src.prelude import *
 from pandas import DataFrame
 
 @define
-class TestModel(Model):
+class SampleModel(Model):
     name : str = field(default="")
     id   : int = field(default=0)
     df_a : DataFrame = field(factory=DataFrame)
@@ -13,9 +13,9 @@ class TestModel(Model):
 
 @fixture
 def model():
-    return TestModel(name='test_model', id=1)
+    return SampleModel(name='test_model', id=1)
 
 
-def test_model_roundtrip(model: TestModel, tmp_path):
+def test_model_roundtrip(model: SampleModel, tmp_path):
     path = model.save(tmp_path / 'model.json')
-    new = TestModel.load(path)
+    new = SampleModel.load(path)

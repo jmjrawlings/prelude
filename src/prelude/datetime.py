@@ -2,17 +2,21 @@
 Datetime functions
 """
 
-from threading import local
-from pendulum.date import Date
-from pendulum.datetime import DateTime
-from pendulum.period import Period
-from pendulum.duration import Duration
-from datetime import timedelta
-from datetime import datetime as pydatetime
 from datetime import date as pydate
-from pendulum.tz.timezone import Timezone
+from datetime import datetime as pydatetime
+from datetime import timedelta
 
 import pendulum as pn
+from pendulum.date import Date
+from pendulum.datetime import DateTime
+from pendulum.duration import Duration
+from pendulum.period import Period
+from pendulum.tz.timezone import Timezone
+from . import log
+
+
+# log = log.get()
+
 
 
 NICE_DATETIME_FORMAT = "D MMM HH:mm"
@@ -21,7 +25,6 @@ ISO_DATE_FORAT = "YYYY-MM-DD"
 NICE_DATE_FORMAT = "MMM DD"
 SHORT_DATE_FORMAT="DD/MM"
 TIMEZONE = 'UTC'
-
 
 
 def duration(*args, days=0, minutes=0, hours=0, seconds=0, milliseconds=0, microseconds=0, weeks=0, months=0, years=0) -> Duration:
@@ -133,19 +136,19 @@ def datetime(
     localized = val.in_tz(timezone)
     
     if not val.tz and warn_on_localize:
-        log.warn(f'DateTime {val} is being localized to {localized.tz.name}')
+        log.warning(f'"{val}" is being localized to "{localized.tz.name}"')
     elif val.tz != timezone and warn_on_localize:
-        log.warn(f'DateTime {val} is changing timezones from {val.tz.name} to {localized.tz.name}')
+        log.warning(f'"{val}" is changing timezones from "{val.tz.name}" to "{localized.tz.name}"')
 
     return localized
 
 
 def date(
         *args,
-        year=1900,
-        month=1,
-        day=1,
-        format=""
+        year : int = 1900,
+        month : int = 1,
+        day : int = 1,
+        format : str = ""
         ) -> Date:
     """
     Create a from the given arguments
