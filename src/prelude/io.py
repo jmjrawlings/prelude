@@ -9,7 +9,19 @@ FilePath = Path
 DirPath = Path
 
 def path(arg: Union[str, Path], create=False, overwrite=False, directory=False, check_exists=True) -> Path:
+    """
+    Returns the given path
 
+    create: bool
+        If true, the file or dir will be created
+
+    overwrite: bool
+        If true, existing paths will be overwritten
+
+    check_exists: bool
+        If true, an exception will be thrown if the path does not exist
+    """
+    
     if isinstance(arg, Path):
         p = arg
     else:
@@ -31,20 +43,35 @@ def path(arg: Union[str, Path], create=False, overwrite=False, directory=False, 
 
 
 def filepath(arg: Union[str, Path], create=False, overwrite=False, check_exists=False) -> FilePath:
+    """
+    Returns the given file path
+    """
     return path(arg, create=create, overwrite=overwrite, directory=False, check_exists=check_exists)
 
 
 def dirpath(arg: Union[str, Path], create=False, overwrite=False, check_exists=False):
+    """
+    Returns the given directory path
+    """
     return path(arg, create=create, overwrite=overwrite, directory=True, check_exists=check_exists)
 
 
 def existing_file(arg, **kwargs) -> FilePath:
+    """
+    Returns the given filepath and ensures it exists
+    """
     return filepath(arg, check_exists=True, **kwargs)
 
 
 def existing_dir(arg, **kwargs) -> DirPath:
+    """
+    Returns the given directory and ensures it exists
+    """
     return dirpath(arg, check_exists=True, **kwargs)
 
 
-def exists(arg):
+def exists(arg) -> bool:
+    """
+    Does the given path exist?
+    """
     return path(arg).exists()    
