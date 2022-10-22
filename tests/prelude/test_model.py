@@ -1,21 +1,64 @@
 from pytest import fixture
 from attrs import define, field
 from src.prelude import *
+from src.prelude.model import M
+from typing import Generic, Type, List
 from pandas import DataFrame
 
+class ModelTest(Generic[M]):
+    type : Type[M]
+
+    @property
+    def name(self):
+        return self.type.__name__
+    
+    @classmethod
+    def create(cls) -> M:
+        return cls.type()
+    
+    def test_save_model(self):
+        model = self.create()
+        model.save(self.name)
+
+    def test_copy_model(self):
+        model = self.create()
+        copy = model.copy()
+
+    def test_serialize_roundtrip(self):
+        model = self.create()
+        path = model.save(self.name)
+        loaded = self.type.load(path)
+        assert model == loaded
+
+    
 @define
-class SampleModel(Model):
+class SimpleModel(Model):
     name : str = field(default="")
     id   : int = field(default=0)
-    df_a : DataFrame = field(factory=DataFrame)
-    df_b : DataFrame = field(factory=DataFrame)
-    
-
-@fixture
-def model():
-    return SampleModel(name='test_model', id=1)
 
 
-def test_model_roundtrip(model: SampleModel, tmp_path):
-    path = model.save(tmp_path / 'model.json')
-    new = SampleModel.load(path)
+class TestSimpleModel(ModelTest):
+    type = SimpleModel
+
+
+@define
+class NestedModel(Model):
+    children : List[SimpleModel]
+    name : str = field(default="")
+    id   : int = field(default=0)
+
+    @classmethod
+    def create(cls):
+        return cls(
+            name='xd',
+            id=100,
+            children=[
+                SimpleModel(name='a'),
+                SimpleModel(name='b'),
+                SimpleModel(name='c')
+            ]
+        )
+
+
+class TestNestedModel(ModelTest):
+    type = SimpleModel

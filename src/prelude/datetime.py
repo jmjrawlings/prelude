@@ -26,7 +26,17 @@ SHORT_DATE_FORMAT="DD/MM"
 TIMEZONE = 'UTC'
 
 
-def duration(*args, days=0, minutes=0, hours=0, seconds=0, milliseconds=0, microseconds=0, weeks=0, months=0, years=0) -> Duration:
+def duration(
+        *args,
+        days=0,
+        minutes=0, 
+        hours=0,
+        seconds=0,
+        milliseconds=0,
+        microseconds=0,
+        weeks=0,
+        months=0,
+        years=0) -> Duration:
     """
     Create a Duration from the given arguments
     """
@@ -38,10 +48,10 @@ def duration(*args, days=0, minutes=0, hours=0, seconds=0, milliseconds=0, micro
             hours=hours,
             seconds=seconds,
             milliseconds=milliseconds,
-            microseconds=0,
-            weeks=0,
-            months=0,
-            years=0
+            microseconds=microseconds,
+            weeks=weeks,
+            months=months,
+            years=years,
         )
 
     arg = args[0]

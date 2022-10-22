@@ -8,7 +8,7 @@ from pandas import DataFrame
 import json
 import attrs
 import cattrs
-
+from . import io
 
 def create_cattrs_converter():
 
@@ -25,6 +25,29 @@ def create_cattrs_converter():
 
 converter = create_cattrs_converter()
 
+
+def int_field(**kwargs):
+    return field(default=0, converter=int, **kwargs)
+
+def string_field(**kwargs):
+    return field(default='', converter=str, **kwargs)
+
+def bool_field(**kwargs):
+    return field(default=False, converter=bool, **kwargs)
+
+def list_field(**kwargs):
+    return field(factory=list, **kwargs)
+
+def set_field(**kwargs):
+    return field(factory=set, **kwargs)
+
+def dict_field(**kwargs):
+    return field(factory=dict, **kwargs)
+
+def float_field(**kwargs):
+    return field(default=0.0, converter=float, **kwargs)
+
+
 M = TypeVar("M", bound='Model')
 
 @define
@@ -36,7 +59,7 @@ class Model:
     def to_dict(self) -> Dict:
         """
         Convert instance to a dictionary, no
-        conversion will occur
+        type conversion will occur
         """
         return cattrs.unstructure(self)
 
@@ -56,7 +79,11 @@ class Model:
         return string
 
     def to_json_file(self, path: Union[str, Path], overwrite=True) -> Path:
-        path = Path(path)
+        """
+        Write this instance as a JSON file, returning
+        the path it was written to
+        """
+        path = io.filepath(path)
         record = self.to_json_dict()
         if path.exists() and not overwrite:
             raise Exception(f'File already exists at "{path}" - use `overwrite=True` to overwrite')
@@ -68,23 +95,35 @@ class Model:
 
     @classmethod
     def from_dict(cls: Type[M], record) -> M:
+        """
+        Create an instance of this class from
+        the given dictionary
+        """
         instance = cattrs.structure(record, cls)
         return instance
 
     @classmethod
     def from_json_dict(cls: Type[M], record) -> M:
+        """
+        Create an instance of this class from
+        the the given JSON compatible dict
+        """
         instance = converter.structure(record, cls)
         return instance        
 
     @classmethod
     def from_json_string(cls: Type[M], string) -> M:
+        """
+        Create an instance of this class from
+        the given JSON string
+        """
         record = json.loads(string)
         instance = cls.from_dict(record)
         return instance
 
     @classmethod        
     def from_json_file(cls: Type[M], path: Union[str, Path]) -> M:
-        path = Path(path)
+        path = io.existing_file(path)
         with path.open('r') as file:
             record = json.load(file)
         model = cls.from_json_dict(record)
@@ -127,7 +166,7 @@ class Model:
                 json.dump(record, file)
                 self._log(f'record saved to {record_path}')
 
-        elapsed : T= (pn.now() - t).in_words()
+        elapsed = (pn.now() - t).in_words(): #type:ignore
         self._log(f'model saved to {path} in {elapsed}')
         return path
 
