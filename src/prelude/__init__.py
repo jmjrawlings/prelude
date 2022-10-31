@@ -5,3 +5,4 @@ from .io import FilePath, DirPath, Path
 from . import io
 
 from .model import Model
+from .prelude import *

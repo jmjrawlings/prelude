@@ -1,6 +1,6 @@
 from typing import List, Tuple, Optional, Union, Type, TypeVar, Dict
 from pandas import DataFrame, Series
-from .datetime import *
+from .datetime_utils import *
 from attrs import define, field
 from pathlib import Path
 import pandas as pd
@@ -8,7 +8,7 @@ from pandas import DataFrame
 import json
 import attrs
 import cattrs
-from . import io
+from . import path_utils
 
 def create_cattrs_converter():
 
@@ -83,7 +83,7 @@ class Model:
         Write this instance as a JSON file, returning
         the path it was written to
         """
-        path = io.filepath(path)
+        path = path_utils.filepath(path)
         record = self.to_json_dict()
         if path.exists() and not overwrite:
             raise Exception(f'File already exists at "{path}" - use `overwrite=True` to overwrite')
@@ -123,7 +123,11 @@ class Model:
 
     @classmethod        
     def from_json_file(cls: Type[M], path: Union[str, Path]) -> M:
-        path = io.existing_file(path)
+        """
+        Create an instance of this class from 
+        the given JSON file
+        """
+        path = path_utils.existing_file(path)
         with path.open('r') as file:
             record = json.load(file)
         model = cls.from_json_dict(record)
@@ -173,16 +177,12 @@ class Model:
     @classmethod
     def load(cls : Type[M], path : Union[Path,str]) -> M:
         """
-        Load a Model instance from disk
+        Load a Model instance from the given path
         """
                 
-        path = Path(path)
-
-        if not path.exists():
-            raise FileNotFoundError(f'{path} does not exist.')
-
+        path = path_utils.path(path, check_exists=True)
         t = pn.now()
-        
+                
         # Assume only the .json was given
         if path.is_file():
             with path.open('r') as file:
@@ -214,11 +214,9 @@ class Model:
             # Store it on the model
             setattr(model, name, df)
 
-        elapsed = (pn.now() - t).in_words()
-        
+        elapsed = (pn.now() - t).in_words(): #type:ignore
         cls._log(f'model loaded from {path} in {elapsed}')
         return model
-
 
     def copy(self : M) -> M:
         """
@@ -231,7 +229,7 @@ class Model:
 
     @classmethod
     def _log(cls: Type[M], *args, **kwargs):
-        print(f'{cls.__name__}:', *args)
+        print(f'{cls.__name__}:', *args, **kwargs)
 
     @classmethod
     def _get_fields_of_type(cls, type):

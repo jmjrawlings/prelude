@@ -8,6 +8,7 @@ from pathlib import Path
 FilePath = Path
 DirPath = Path
 
+
 def path(arg: Union[str, Path], create=False, overwrite=False, directory=False, check_exists=True) -> Path:
     """
     Returns the given path

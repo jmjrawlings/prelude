@@ -36,7 +36,8 @@
         "python.linting.enabled": true,
         "python.analysis.typeCheckingMode": "basic",
         "python.analysis.diagnosticSeverityOverrides": {
-            "reportUnboundVariable" : "information" 
+            "reportUnboundVariable" : "information",
+            "reportOptionalMemberAccess": "warning"
         },
         
         // Pytest

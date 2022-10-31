@@ -179,3 +179,30 @@ def date(*args, year:int=1900, month:int=1, day:int=1, format:str = "") -> Date:
         return date(parsed)
     else:
         raise ValueError(f'Could not create a Date from {arg}')
+
+
+
+class HasTimePeriod:
+  """
+  Adds helper functions for
+  the class that inherits it
+  """
+  period: Period
+      
+  @property
+  def start_time(self) -> DateTime:
+    return self.period.start
+  
+  @property
+  def end_time(self) -> DateTime:
+    return self.period.end
+  
+  @property
+  def duration(self) -> Duration:
+    return self.period
+  
+  def duration_in_words(self) -> str:
+    return self.period.in_words()
+  
+  def period_in_words(self, fmt=NICE_DATETIME_FORMAT) -> str:
+    return f'{self.start_time.format(fmt)} to {self.end_time.format(fmt)}'        
