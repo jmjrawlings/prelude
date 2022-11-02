@@ -170,7 +170,7 @@ class Model:
                 json.dump(record, file)
                 self._log(f'record saved to {record_path}')
 
-        elapsed = (pn.now() - t).in_words(): #type:ignore
+        elapsed = (pn.now() - t).in_words() #type:ignore
         self._log(f'model saved to {path} in {elapsed}')
         return path
 
@@ -214,7 +214,7 @@ class Model:
             # Store it on the model
             setattr(model, name, df)
 
-        elapsed = (pn.now() - t).in_words(): #type:ignore
+        elapsed = (pn.now() - t).in_words() #type:ignore
         cls._log(f'model loaded from {path} in {elapsed}')
         return model
 

@@ -15,64 +15,57 @@
     "workspaceMount": "source=${localWorkspaceFolder},target=/app,type=bind,consistency=cached",
         
     "mounts":[
-        
         // Mount the hosts docker engine for dagger
         "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
-
         // [Optional] Use a volume to install VSCode extensions, see https://code.visualstudio.com/remote/advancedcontainers/avoid-extension-reinstalls
         "source=vscode-extensions,target=/root/.vscode-server/extensions,type=volume"
     ],
 
-    // VSCode settings inside the container
-    "settings": {
-        
-        // Python
-        "python.defaultInterpreterPath": "/opt/venv/bin",
-        "python.pythonPath": "/opt/venv/bin",
-        "python.disableInstallationCheck": true,
-                        
-        // Typechecking / Linting
-        "python.languageServer": "Pylance",
-        "python.linting.enabled": true,
-        "python.analysis.typeCheckingMode": "basic",
-        "python.analysis.diagnosticSeverityOverrides": {
-            "reportUnboundVariable" : "information",
-            "reportOptionalMemberAccess": "warning"
-        },
-        
-        // Pytest
-        "python.testing.pytestEnabled": true,
-        "python.testing.pytestArgs": ["tests"],
-        "python.testing.unittestEnabled": false,
-        "python.testing.nosetestsEnabled": false,
-                
-        // ZShell
-        "terminal.integrated.defaultProfile.linux": "zsh",
-        "terminal.integrated.profiles.linux": {
-            "zsh": {
-              "path": "/bin/zsh",
-              "args": ["-l"]
-            }
-          },
+    "customizations": {
+        "vscode": {
+            "settings": {
 
-        // Misc
-        "editor.detectIndentation": false,
-        "editor.insertSpaces": true,
-        "telemetry.telemetryLevel" : "off"
+                // Python
+                "python.defaultInterpreterPath": "/opt/venv/bin",
+                "python.pythonPath": "/opt/venv/bin",
+                "python.disableInstallationCheck": true,
+                "python.languageServer": "Pylance",
+                "python.linting.enabled": true,
+                "python.analysis.typeCheckingMode": "basic",
+                "python.analysis.diagnosticSeverityOverrides": {
+                    "reportUnboundVariable" : "information",
+                    "reportOptionalMemberAccess": "warning"
+                },
+                "python.testing.pytestEnabled": true,
+                "python.testing.pytestArgs": ["tests"],
+                "python.testing.unittestEnabled": false,
+                "python.testing.nosetestsEnabled": false,
+                "terminal.integrated.defaultProfile.linux": "zsh",
+                "terminal.integrated.profiles.linux": {
+                    "zsh": {
+                        "path": "/bin/zsh",
+                        "args": ["-l"]
+                    }
+                },
+                "editor.detectIndentation": false,
+                "editor.insertSpaces": true,
+                "telemetry.telemetryLevel" : "off"
+            },
+
+            "extensions": [
+                // Offical python plugin
+                "ms-python.python",
+                // Jupyter notebook integration
+                "ms-toolsai.jupyter",
+                // Access workspace via web browser (good for .html)
+                "ritwickdey.liveserver",
+                // Mermaid JS support
+                "bierner.markdown-mermaid",
+                // Dagger Language Server
+                "Dagger.dagger"
+            ]
+        }
     },
-
-    "extensions": [
-        // Offical python plugin
-		"ms-python.python",
-        // Jupyter notebook integration
-		"ms-toolsai.jupyter",
-        // Access workspace via web browser (good for .html)
-        "ritwickdey.liveserver",
-        // Mermaid JS support
-        "bierner.markdown-mermaid",
-        // Dagger Language Server
-        "Dagger.dagger"
-	],
             
     "runArgs": [ 
         "--init",

@@ -7,9 +7,10 @@ from pathlib import Path
 
 FilePath = Path
 DirPath = Path
+PathLike = Union[str, Path]
 
 
-def path(arg: Union[str, Path], create=False, overwrite=False, directory=False, check_exists=True) -> Path:
+def path(arg: PathLike, create=False, overwrite=False, directory=False, check_exists=True) -> Path:
     """
     Returns the given path
 
@@ -43,35 +44,35 @@ def path(arg: Union[str, Path], create=False, overwrite=False, directory=False, 
     return p
 
 
-def filepath(arg: Union[str, Path], create=False, overwrite=False, check_exists=False) -> FilePath:
+def filepath(arg: PathLike, create=False, overwrite=False, check_exists=False) -> FilePath:
     """
     Returns the given file path
     """
     return path(arg, create=create, overwrite=overwrite, directory=False, check_exists=check_exists)
 
 
-def dirpath(arg: Union[str, Path], create=False, overwrite=False, check_exists=False):
+def dirpath(arg: PathLike, create=False, overwrite=False, check_exists=False):
     """
     Returns the given directory path
     """
     return path(arg, create=create, overwrite=overwrite, directory=True, check_exists=check_exists)
 
 
-def existing_file(arg, **kwargs) -> FilePath:
+def existing_file(arg: PathLike, **kwargs) -> FilePath:
     """
     Returns the given filepath and ensures it exists
     """
     return filepath(arg, check_exists=True, **kwargs)
 
 
-def existing_dir(arg, **kwargs) -> DirPath:
+def existing_dir(arg: PathLike, **kwargs) -> DirPath:
     """
     Returns the given directory and ensures it exists
     """
     return dirpath(arg, check_exists=True, **kwargs)
 
 
-def exists(arg) -> bool:
+def exists(arg: PathLike) -> bool:
     """
     Does the given path exist?
     """

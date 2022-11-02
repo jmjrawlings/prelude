@@ -3,20 +3,14 @@ panda.py
 
 Extensions and helpers for pandas
 """
-
-from ctypes import Union
 from tkinter.messagebox import NO
 from . import datetime_utils as dt
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 import pandas as pd
+from pandas import DataFrame, Series
+from .list_utils import *
 
-
-class DataFrame(pd.DataFrame):
-    pass
-
-
-class Series(pd.Series):
-    pass
+FrameOrSeries = Union[DataFrame, Series]
 
 
 def to_timestamp(arg, tz='UTC') -> pd.Timestamp:
@@ -45,15 +39,22 @@ def non_empty(arg):
     return not empty(arg)    
 
 
-def shape(df: Union[DataFrame, Series, None]) -> Tuple[int,int]:
-    if df is None:
+def shape(arg) -> Tuple[int,int]:
+    if arg is None:
         return 0,0
-    if isinstance(df)
-    if non_empty(df):
-        rows,cols = 0,0
+    if isinstance(arg, pd.DataFrame):
+        return arg.shape
+    elif isinstance(arg, pd.Series):
+        return arg.shape
+    raise ValueError(f'{type(arg)} was not a DataFrame or Series')
+
+
+def describe(arg) -> str:
+    if arg is None:
+        return ''
     else:
-        rows,cols=df.shape
-    return f'{rows:,} rows and {cols:,} cols'
+        rows, cols = shape(arg)
+        return f'{type(arg)} with {rows:,} rows and {cols:,} cols'
 
 
 def empty_df(df: Optional[DataFrame] = None) -> DataFrame:
@@ -70,7 +71,7 @@ def empty_df(df: Optional[DataFrame] = None) -> DataFrame:
     return df[df.index != df.index]
 
 
-def rename_columns(df : DF, **kwargs) -> DF:
+def rename_columns(df : DataFrame, *args, **kwargs) -> DataFrame:
   """
   rename_columns(df, a=b, c=d, e=f)
   """
@@ -108,12 +109,10 @@ def describe_time_period(
   return df
   
 
-def localize_datetime_columns(df: DF, tz=TIMEZONE):
+def localize_datetime_columns(df: DataFrame, tz=TIMEZONE):
   for column in df.columns:
     if df[column].dtype == 'datetime64[ns]':
-#       print(f'localizing time column "{column}"')
       df[column] = df[column].dt.tz_localize(tz)  
-  
   
   
 def filter(df: DataFrame, strict=True, **kwargs) -> DataFrame:
@@ -151,15 +150,3 @@ def filter(df: DataFrame, strict=True, **kwargs) -> DataFrame:
     print('filter-df: dataframe is empty')
     
   return df
-
-
-@test
-def test_filter_df():
-  a = DataFrame(dict(a=[1,2,3], b=['a','b','c'], c=[2,2,10]))
-  filter_df(a, a=[2,3], b='c')    
-  
-@test
-def test_to_timestamp():
-  now = pn.now()
-  stamp = to_timestamp(now)
-  print(now, stamp)

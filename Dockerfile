@@ -10,6 +10,7 @@ ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 ARG DEBIAN_FRONTEND=noninteractive
 
+
 # ********************************************************
 # * Python Builder
 # ********************************************************
@@ -19,6 +20,9 @@ RUN python -m venv ${PYTHON_VENV}
 
 # ********************************************************
 # * Base Layer
+# *
+# * Dependencies and environment variables used
+# * by other targets.
 # ********************************************************
 FROM python:${PYTHON_VERSION}-slim as base
 
@@ -31,16 +35,13 @@ ENV PIP_NO_CACHE_DIR=1
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
-# ********************************************************
-# * Add a non-root user
-# ********************************************************
+# Add a non-root user
 RUN groupadd --gid ${USER_GID} ${USER_NAME} \
     && useradd --uid ${USER_UID} --gid ${USER_GID} -m ${USER_NAME} \
     && apt-get update \
     && apt-get install -y sudo \
     && echo $USER_NAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USER_NAME} \
     && chmod 0440 /etc/sudoers.d/${USER_NAME}
-
 
 # ********************************************************
 # * Dev 
@@ -78,9 +79,6 @@ RUN apt-get update \
         wget \
     && rm -rf /var/lib/apt/lists/*
 
-# ********************************************************
-# * Install Docker / Compose
-# ********************************************************
 # Install Docker CE CLI
 RUN curl -fsSL https://download.docker.com/linux/$(lsb_release -is | tr '[:upper:]' '[:lower:]')/gpg | apt-key add - 2>/dev/null \
     && echo "deb [arch=amd64] https://download.docker.com/linux/$(lsb_release -is | tr '[:upper:]' '[:lower:]') $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list \
@@ -97,17 +95,13 @@ RUN LATEST_COMPOSE_VERSION=$(curl -sSL "https://api.github.com/repos/docker/comp
 RUN groupadd docker \
     && usermod -aG docker ${USER_NAME}
 
-# ********************************************************
-# * Install Dagger - TODO: pin version, should be refreshed to due to ARG
-# ********************************************************
+# Install Dagger - TODO: pin version, should be refreshed to due to ARG
 ARG DAGGER_VERSION
 RUN curl -sfL https://releases.dagger.io/dagger/install.sh | sh \
     && mv ./bin/dagger /usr/local/bin \
     && echo ${DAGGER_VERSION}
 
-# ********************************************************
-# * Install Developer packages
-# ********************************************************
+# Install Developer packages
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         fonts-powerline \
@@ -120,9 +114,7 @@ RUN apt-get update \
         zsh \
     && rm -rf /var/lib/apt/lists/*
 
-# ********************************************************
-# * Install zsh & oh-my-zsh
-# ********************************************************
+# Install zsh & oh-my-zsh
 USER ${USER_NAME}
 COPY .devcontainer/.p10k.zsh /home/$USER_NAME/.p10k.zsh
 RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/v1.1.3/zsh-in-docker.sh)" -- \
@@ -132,9 +124,7 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
     -p https://github.com/zsh-users/zsh-completions && \
     echo "[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh" >> ~/.zshrc
 
-# ********************************************************
-# * Install Python dependencies
-# ********************************************************
+# Install Python dependencies
 COPY ./requirements/requirements-dev.txt ./requirements.txt
 RUN pip-sync ./requirements.txt
 
@@ -144,8 +134,8 @@ CMD zsh
 # ********************************************************
 # * Test 
 # *
-# * This target contains only the code and dependencies 
-# * needed to run tests.
+# * This target contains python source code, testing code 
+# * and all dependencies required to run the test suite.
 # ********************************************************
 FROM base as test
 
@@ -167,9 +157,11 @@ CMD pytest
 
 # ********************************************************
 # * Prod 
-# *
-# * This target contains only the source code and required
-# * packages.
+# * 
+# * This target contains only the python source code and 
+# * packages required to run the app.
+# * 
+# * The goal here is the smallest and fastest image possible
 # ********************************************************
 FROM base as prod
 

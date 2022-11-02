@@ -103,41 +103,11 @@ def to_list(*args, unique=False, sort=False, field='', map=None, error_if_empty=
     
   return items
 
-def to_unique_list(*args, **kwargs):
+def to_distinct_list(*args, **kwargs):
   return to_list(*args, unique=True, **kwargs)
 
 def to_sorted_list(*args, **kwargs):
   return to_list(*args, sort=True, **kwargs)
-
-def to_unique_sorted_list(*args, **kwargs):
+  
+def to_distinct_sorted_list(*args, **kwargs):
   return to_list(*args, sort=True, unique=True, **kwargs)
-
-def to_set(*args, **kwargs):
-  return set(to_list(*args, unique=False, **kwargs))
-
-def to_sorted_set(*args, **kwargs):
-  return set(to_list(*args, sort=True, unique=False, **kwargs))
-
-def pairwise(xs : List):
-  """
-  Iterate over the given list in a pairwise
-  fashion
-  """
-  for a,b in zip(xs[:-1], xs[1:]):
-    yield a,b
-   
-
-def venn_diagram(a, b) -> Tuple[Set, Set, Set]:
-  """
-  Returns the venn diagram of the two collections
-  ie 3 sets:
-  - The elements in a only
-  - The elements in both a and b
-  - The elements in b only
-  """
-  a = set(a)
-  b = set(b)
-  middle = a.intersection(b)
-  left = a.difference(middle)
-  right = b.difference(middle)
-  return left, middle, right
