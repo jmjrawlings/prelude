@@ -10,7 +10,7 @@ DirPath = Path
 PathLike = Union[str, Path]
 
 
-def path(arg: PathLike, create=False, overwrite=False, directory=False, check_exists=True) -> Path:
+def make(arg: PathLike, create=False, overwrite=False, directory=False, check_exists=True) -> Path:
     """
     Returns the given path
 
@@ -48,14 +48,14 @@ def filepath(arg: PathLike, create=False, overwrite=False, check_exists=False) -
     """
     Returns the given file path
     """
-    return path(arg, create=create, overwrite=overwrite, directory=False, check_exists=check_exists)
+    return make(arg, create=create, overwrite=overwrite, directory=False, check_exists=check_exists)
 
 
 def dirpath(arg: PathLike, create=False, overwrite=False, check_exists=False):
     """
     Returns the given directory path
     """
-    return path(arg, create=create, overwrite=overwrite, directory=True, check_exists=check_exists)
+    return make(arg, create=create, overwrite=overwrite, directory=True, check_exists=check_exists)
 
 
 def existing_file(arg: PathLike, **kwargs) -> FilePath:
@@ -76,4 +76,4 @@ def exists(arg: PathLike) -> bool:
     """
     Does the given path exist?
     """
-    return path(arg).exists()    
+    return make(arg).exists()    
