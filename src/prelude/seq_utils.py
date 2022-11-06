@@ -34,55 +34,59 @@ def iterate(*args, field='', method='values') -> Generator:
     def recurse(arg):
         t = type(arg)
         n = t.__name__
+        log.debug('iter', type=n, arg=arg)
 
         # Pandas DataFrames
-        if isinstance(t, DataFrame):
+        if isinstance(arg, DataFrame):
             if not field:
                 if iterkeys:
-                    recurse(arg.index)
+                    yield from recurse(arg.index)
             elif field in arg.columns:
-                recurse(arg[field])
+                yield from recurse(arg[field])
             elif arg.index.name == field:
-                recurse(arg.index)
+                yield from recurse(arg.index)
 
         # Pandas Series
         elif isinstance(arg, Series):
             if not field:
                 if iterkeys:
-                    recurse(arg.index)
+                    yield from recurse(arg.index)
                 else:
-                    recurse(arg.values)
+                    yield from recurse(arg.values)
             elif arg.index.name == field:
-                recurse(arg.index)
+                yield from recurse(arg.index)
             elif iterkeys:
-                recurse(arg.index)
+                yield from recurse(arg.index)
             else:
-                recurse(arg.values)
+                yield from recurse(arg.values)
 
         # Dictionary
         elif isinstance(arg, dict):
             
             if field and field in arg:
-                recurse(arg[field])
+                yield from recurse(arg[field])
             elif iterkeys:
                 for key in arg.keys():
-                    recurse(key)
+                    yield from recurse(key)
             else:
                 for val in arg.values():
-                    recurse(val)
+                    yield from recurse(val)
             
         # Iterable
-        elif hasattr(arg, '__iter__'):
+        elif hasattr(arg, '__iter__') and not isinstance(arg, str):
             for item in arg:
-                recurse(item)
+                yield from recurse(item)
 
         # Has the specific field
         elif hasattr(arg, field):
-            recurse(getattr(arg, field))
+            yield from recurse(getattr(arg, field))
 
         # Must be a value
         else:
+            log.debug('iter', val=arg)
             yield arg
+
+        log.error('iter', val=arg)
             
 
     yield from recurse(args)

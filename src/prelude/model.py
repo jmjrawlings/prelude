@@ -2,13 +2,13 @@ from typing import List, Tuple, Optional, Union, Type, TypeVar, Dict
 from pandas import DataFrame, Series
 from .datetime_utils import *
 from attrs import define, field
-from pathlib import Path
 import pandas as pd
 from pandas import DataFrame
 import json
 import attrs
 import cattrs
-from . import path_utils
+from src.prelude import pth, Path
+
 
 def create_cattrs_converter():
 
@@ -83,7 +83,7 @@ class Model:
         Write this instance as a JSON file, returning
         the path it was written to
         """
-        path = path_utils.filepath(path)
+        path = pth.filepath(path)
         record = self.to_json_dict()
         if path.exists() and not overwrite:
             raise Exception(f'File already exists at "{path}" - use `overwrite=True` to overwrite')
@@ -127,7 +127,7 @@ class Model:
         Create an instance of this class from 
         the given JSON file
         """
-        path = path_utils.existing_file(path)
+        path = pth.existing_file(path)
         with path.open('r') as file:
             record = json.load(file)
         model = cls.from_json_dict(record)
@@ -180,7 +180,7 @@ class Model:
         Load a Model instance from the given path
         """
                 
-        path = path_utils.path(path, check_exists=True)
+        path = pth.make(path, check_exists=True)
         t = pn.now()
                 
         # Assume only the .json was given

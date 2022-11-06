@@ -2,7 +2,10 @@
 
 # Watch for changes in the Dagger CUE file and rerun
 # the given action
-dagger do $1 --log-level debug --log-format plain && \
+dagger do "$1" \
+    --log-level debug \
+    --log-format plain
+    
 inotifywait \
     --quiet \
     --monitor \

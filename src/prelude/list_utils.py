@@ -31,6 +31,8 @@ def make(*args, field='', method='values') -> List:
 def distinct(*args, **kwargs):
     return list(set.make(*args, **kwargs))
 
+def unique(*args, **kwargs):
+    return distinct(*args, **kwargs)    
 
-def sorted(*args, **kwargs):
+def sort(*args, **kwargs):
     return sorted(make(*args, **kwargs))

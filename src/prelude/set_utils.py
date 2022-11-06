@@ -3,6 +3,9 @@ from pandas import DataFrame, Series
 from warnings import warn
 from .seq_utils import iterate
 
+def empty():
+    return set()
+
 
 def make(*args, field='', method='keys'):
     """

@@ -1,6 +1,6 @@
 from pytest import fixture
 from attrs import define, field
-from src.prelude import *
+from src.prelude import model, pth, Model
 from src.prelude.model import M
 from typing import Generic, Type, List
 from pandas import DataFrame
