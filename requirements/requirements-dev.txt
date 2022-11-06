@@ -488,11 +488,6 @@ stack-data==0.3.0
     #   -c /app/requirements/requirements-prod.txt
     #   -c /app/requirements/requirements-test.txt
     #   ipython
-structlog==22.1.0
-    # via
-    #   -c /app/requirements/requirements-prod.txt
-    #   -c /app/requirements/requirements-test.txt
-    #   -r /app/requirements/requirements-prod.in
 terminado==0.15.0
     # via
     #   -c /app/requirements/requirements-prod.txt
