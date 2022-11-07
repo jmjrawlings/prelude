@@ -2,8 +2,7 @@
 List utilities
 """
 from typing import List, TypeVar
-from . import seq_utils as seq
-from . import set_utils as set
+from . import seq, set
 
 T = TypeVar("T")
 
@@ -24,7 +23,9 @@ def make(*args, field='', method='values') -> List:
     to_list(False) == [False]
     to_list([1,2],None, allow_none=True) == [1, 2, None]
     """
-    items = list(seq.iterate(*args, field=field, method=method))
+    items = []
+    for item in seq.iter(*args, field=field, method=method):
+        items.append(item)
     return items
 
 

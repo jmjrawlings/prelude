@@ -1,13 +1,5 @@
-from .datetime_utils import Date, DateTime, Period, Duration
-from . import datetime_utils as dt
-
-from .path_utils import FilePath, DirPath, Path
-
-from . import path_utils as pth
-from . import list_utils as lst
-from . import set_utils as set
-from . import seq_utils as seq
-
-
-from .model import Model
+from . import lst, pth, seq, set, dt
+from .dt import Date, DateTime, Duration, Period
 from .misc import *
+from .model import Model
+from .pth import DirPath, FilePath, Path

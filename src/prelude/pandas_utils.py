@@ -3,11 +3,11 @@ panda.py
 
 Extensions and helpers for pandas
 """
-from . import datetime_utils as dt
+from . import dt as dt
 from typing import Optional, Tuple, Union
 import pandas as pd
 from pandas import DataFrame, Series
-from .list_utils import *
+from .lst import *
 
 FrameOrSeries = Union[DataFrame, Series]
 

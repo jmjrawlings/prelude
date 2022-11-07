@@ -1,13 +1,11 @@
 from typing import Tuple, Set
-from pandas import DataFrame, Series
-from warnings import warn
-from .seq_utils import iterate
+from . import seq
 
 def empty():
     return set()
 
 
-def make(*args, field='', method='keys'):
+def make(*args, field='', method='keys') -> Set:
     """
     Convert the given argument to a set.
 
@@ -38,14 +36,14 @@ def make(*args, field='', method='keys'):
     to_list([1,2],None, allow_none=True) == [1, 2, None]
     """
 
-    items = set()
-    for item in iterate(*args, field=field, method=method):
+    items = empty()
+    for item in seq.iter(*args, field=field, method=method):
         items.add(item)
 
     return items
 
 
-def sorted(*args, **kwargs):
+def sort(*args, **kwargs) -> Set:
     """
     Create a sorted set from the given arguments
     """        

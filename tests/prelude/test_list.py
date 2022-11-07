@@ -5,4 +5,4 @@ def test_make():
 
 
 def test_sort():
-  assert lst.sort([3,1,2,3,3,2,1]) == [1,1,22,3,3,3]
+  assert lst.sort([3,1,2,3,3,2,1]) == [1,1,2,2,3,3,3]

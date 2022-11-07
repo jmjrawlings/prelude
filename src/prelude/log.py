@@ -16,10 +16,10 @@ logging.basicConfig(
     )]
 )
 
-def get(name=''):
+def get_logger(name=''):
     return logging.getLogger(name)
 
-default = logging.getLogger("rich")
+default = get_logger("rich")
 
 info = default.info
 err = default.error

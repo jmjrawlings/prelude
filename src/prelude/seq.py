@@ -1,6 +1,6 @@
-from typing import TypeVar, Sequence, Tuple, Generator
+from typing import TypeVar, Sequence, Tuple, Generator, Union, Literal
 from pandas import DataFrame, Series
-from structlog import get_logger
+from .log import get_logger
 
 log = get_logger(__name__)
 
@@ -8,7 +8,10 @@ log = get_logger(__name__)
 T = TypeVar("T")
 
 
-def iterate(*args, field='', method='values') -> Generator:
+Method = Union[Literal['keys'], Literal['values']]
+    
+
+def iter(*args, field='', method: Method = 'keys') -> Generator:
     """
     Iterate over the given arguments
 
@@ -27,14 +30,13 @@ def iterate(*args, field='', method='values') -> Generator:
         iterate(False) == [False]
         iterate([1,2],None, allow_none=True) == [1, 2, None]
     """
-
+    
     iterkeys = method == 'keys'
-    itervals = not iterkeys
     
     def recurse(arg):
         t = type(arg)
         n = t.__name__
-        log.debug('iter', type=n, arg=arg)
+        log.debug(f'iter {n} = {arg}')
 
         # Pandas DataFrames
         if isinstance(arg, DataFrame):
@@ -83,11 +85,9 @@ def iterate(*args, field='', method='values') -> Generator:
 
         # Must be a value
         else:
-            log.debug('iter', val=arg)
+            log.debug('iterate %s', arg)
             yield arg
-
-        log.error('iter', val=arg)
-            
+    
 
     yield from recurse(args)
 
@@ -116,5 +116,5 @@ def pairwise(seq: Sequence[T]) -> Generator[Tuple[T,T], None, None]:
     return
     yield
 
-  for i,j in zip_longest(a,b):
+  for i,j in zip(a,b):
     yield i,j

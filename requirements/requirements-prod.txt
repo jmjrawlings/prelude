@@ -213,6 +213,8 @@ soupsieve==2.3.2.post1
     # via beautifulsoup4
 stack-data==0.3.0
     # via ipython
+strenum==0.4.8
+    # via -r /app/requirements/requirements-prod.in
 terminado==0.15.0
     # via notebook
 tinycss2==1.1.1

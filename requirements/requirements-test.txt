@@ -345,6 +345,10 @@ stack-data==0.3.0
     # via
     #   -c /app/requirements/requirements-prod.txt
     #   ipython
+strenum==0.4.8
+    # via
+    #   -c /app/requirements/requirements-prod.txt
+    #   -r /app/requirements/requirements-prod.in
 terminado==0.15.0
     # via
     #   -c /app/requirements/requirements-prod.txt
