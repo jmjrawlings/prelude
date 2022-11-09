@@ -6,7 +6,7 @@ on:
 
 jobs:
   dagger:
-    runs-on: debian-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Clone repository
         uses: actions/checkout@v2
