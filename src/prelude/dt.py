@@ -191,18 +191,26 @@ class HasTimePeriod:
       
   @property
   def start_time(self) -> DateTime:
-    return self.period.start
-  
+    return datetime(self.period.start)
+
+  @property
+  def start_date(self) -> Date:
+    return date(self.period.start)
+
   @property
   def end_time(self) -> DateTime:
-    return self.period.end
+    return datetime(self.period.end)
+
+  @property
+  def end_date(self) -> Date:
+    return date(self.period.end)
   
   @property
   def duration(self) -> Duration:
     return self.period
   
   def duration_in_words(self) -> str:
-    return self.period.in_words()
+    return str(self.period.in_words())
   
   def period_in_words(self, fmt=NICE_DATETIME_FORMAT) -> str:
-    return f'{self.start_time.format(fmt)} to {self.end_time.format(fmt)}'        
+    return f'{self.start_time.format(fmt)} to {self.end_time.format(fmt)}'
