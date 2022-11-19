@@ -1,9 +1,9 @@
 """
 Altair utilities
 """
-import altair as alt
-from collections import to_list
-
+from altair import *
+from . import lst
+from typing import Any
 
 def val(x):
   """
@@ -12,12 +12,12 @@ def val(x):
   """
 
   if isinstance(x, float) or isinstance(x, int) or (':' not in str(x)):
-    return alt.value(x)
+    return value(x)
 
   return x
 
 
-def cond(condition, t=1, f=0):
+def cond(condition, t: Any, f: Any):
   """ 
   Altair Condition based on the selector, makes conditional
   properties easier to read.
@@ -29,10 +29,10 @@ def cond(condition, t=1, f=0):
   """
   if_true = val(t)
   if_false = val(f)
-  return alt.condition(condition, if_true, if_false)
+  return condition(condition, if_true, if_false)
 
 
-def tooltip(field:str, time_format="%Y-%m-%d %H:%M") -> alt.Tooltip:
+def tooltip(field:str, time_format="%Y-%m-%d %H:%M") -> Tooltip:
   """
   Return an altair tooltip given the field
   definition.  This allows us to avoid
@@ -42,17 +42,17 @@ def tooltip(field:str, time_format="%Y-%m-%d %H:%M") -> alt.Tooltip:
   
   # Assume datetime tooltip
   if ':T' in field:
-    return alt.Tooltip(field, format=time_format)
+    return Tooltip(field, format=time_format)
   
   # No type was specified
   if ':' not in field:
     
     # Assume time based on column name
     if 'time' in field.lower():
-      return alt.Tooltip(field, format=time_format)
+      return Tooltip(field, format=time_format)
     # Otherwise nominal
     else:
-      return alt.Tooltip(field + ':N')
+      return Tooltip(field + ':N')
   
   # Pass as normal
   return field
@@ -68,7 +68,7 @@ def tooltips(*args):
     chart.encode(tooltip=alt_tooltips('name','type','amount','time'))
   """
 
-  return to_list(*args, ) list(map(alt_tooltip, args))
+  return lst.make(map(tooltip, args))
   
 
 
@@ -78,7 +78,7 @@ def select(*fields, empty='none', on='mouseover', clear='mouseout', **kwargs):
   a function that returns an altair condition
   based on the value
   """
-  selection = alt.selection_single(
+  selection = selection_single(
     fields=fields,
     empty=empty,
     on=on,
@@ -86,7 +86,7 @@ def select(*fields, empty='none', on='mouseover', clear='mouseout', **kwargs):
     **kwargs)
   
   def condition(t, f):
-    return alt_cond(selection, t, f)
+    return cond(selection, t, f)
   
   return selection, condition
 
@@ -102,10 +102,10 @@ def configure_chart(chart):
     minfmt = tft("%H%M")
 
     return (
-        chart.configure_title(fontSize=14, color=black, font="monospace")
+        chart.configure_title(fontSize=14, color='black', font="monospace")
         .configure_text(
             fontSize=16,
-            color=black,
+            color='black',
             font="monospace",
             baseline="middle",
         )
