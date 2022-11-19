@@ -75,7 +75,7 @@ ARG DEBIAN_FRONTEND
 
 USER root
 
-# Install packages
+# Install core packages
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         curl \
@@ -97,7 +97,7 @@ RUN LATEST_COMPOSE_VERSION=$(curl -sSL "https://api.github.com/repos/docker/comp
     && curl -sSL "https://github.com/docker/compose/releases/download/${LATEST_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose \
     && chmod +x /usr/local/bin/docker-compose
 
-# Give docker access to the non-root user
+# Give Docker access to the non-root user
 RUN groupadd docker \
     && usermod -aG docker ${USER_NAME}
 
@@ -106,6 +106,14 @@ ARG DAGGER_VERSION
 RUN curl -sfL https://releases.dagger.io/dagger/install.sh | sh \
     && mv ./bin/dagger /usr/local/bin \
     && echo ${DAGGER_VERSION}
+
+# Install Github CLI
+RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+    && sudo apt update \
+    && sudo apt install gh -y \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Developer packages
 RUN apt-get update \
@@ -182,6 +190,6 @@ ENV PYTHONDONTWRITEBYTECODE=0
 
 USER ${USER_NAME}
 WORKDIR ${APP_PATH}
-COPY ./src .
+COPY ./src ./src
 COPY ./requirements/requirements-prod.txt ./requirements.txt
 RUN pip-sync ./requirements.txt
