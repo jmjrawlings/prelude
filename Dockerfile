@@ -30,6 +30,7 @@ ARG PYTHON_VENV
 ARG USER_NAME
 ARG USER_GID
 ARG USER_UID
+ARG APP_PATH
 
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 ENV PIP_NO_CACHE_DIR=1
@@ -43,12 +44,16 @@ RUN groupadd --gid ${USER_GID} ${USER_NAME} \
     && apt-get install -y sudo \
     && echo ${USER_NAME} ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USER_NAME} \
     && chmod 0440 /etc/sudoers.d/${USER_NAME}
-
+ 
 # Install python virtual env
 COPY --from=python-builder --chown=${USER_UID}:${USER_GID} ${PYTHON_VENV} ${PYTHON_VENV}
 ENV VIRTUAL_ENV=$PYTHON_VENV
 ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
 RUN pip install pip-tools
+
+# Create an assign app path
+RUN mkdir $APP_PATH && chown -R $USER_NAME $APP_PATH
+
 
 # ********************************************************
 # * Dev 
@@ -148,8 +153,9 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
 USER ${USER_NAME}
-COPY ./src .
-COPY ./tests .
+WORKDIR ${APP_PATH}
+COPY ./src ./src
+COPY ./tests ./tests
 COPY ./pytest.ini .
 COPY ./requirements/requirements-test.txt ./requirements.txt
 RUN pip-sync ./requirements.txt
@@ -175,6 +181,7 @@ ENV PYTHONOPTIMIZE=2
 ENV PYTHONDONTWRITEBYTECODE=0
 
 USER ${USER_NAME}
+WORKDIR ${APP_PATH}
 COPY ./src .
 COPY ./requirements/requirements-prod.txt ./requirements.txt
 RUN pip-sync ./requirements.txt
