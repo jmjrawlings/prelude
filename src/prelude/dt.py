@@ -13,9 +13,7 @@ from pendulum.duration import Duration
 from pendulum.period import Period
 from pendulum.tz.timezone import Timezone
 from pendulum.parsing import parse
-from . import log
-
-# log = log.get()
+from . import log, lst, seq
 
 
 NICE_DATETIME_FORMAT = "D MMM HH:mm"
@@ -181,36 +179,67 @@ def date(*args, year:int=1900, month:int=1, day:int=1, format:str = "") -> Date:
         raise ValueError(f'Could not create a Date from {arg}')
 
 
+def time_period(*args, tz=TIMEZONE, default=None) -> Period:
+    """
+    Create a time period from the given
+    arguments.  Arguments may be anything that
+    `datetime` accepts.  The resulting time period
+    will span the given arguments.
+    """
+    max_time = DateTime.min
+    min_time = DateTime.max
+    valid = False
+    
+    for arg in seq.iter(args):
+        time = datetime(arg, tz=tz)
+        min_time = min(min_time, time)
+        max_time = max(max_time, time)
+        valid = True
+
+    if valid:
+        if default is None:
+            raise ValueError(f'No arguments or default was given')
+        
+        time = datetime(default)
+        min_time = time
+        max_time = time
+    elif max_time < min_time:
+        min_time, max_time = max_time, min_time
+
+    return Period(start=min_time, end=max_time)
+
 
 class HasTimePeriod:
   """
   Adds helper functions for
   the class that inherits it
   """
-  period: Period
+
+  def get_time_period(self) -> Period:
+    raise NotImplementedError()
       
   @property
   def start_time(self) -> DateTime:
-    return datetime(self.period.start)
+    return datetime(self.get_time_period().start)
 
   @property
   def start_date(self) -> Date:
-    return date(self.period.start)
+    return date(self.get_time_period().start)
 
   @property
   def end_time(self) -> DateTime:
-    return datetime(self.period.end)
+    return datetime(self.get_time_period().end)
 
   @property
   def end_date(self) -> Date:
-    return date(self.period.end)
+    return date(self.get_time_period().end)
   
   @property
   def duration(self) -> Duration:
-    return self.period
+    return self.get_time_period()
   
   def duration_in_words(self) -> str:
-    return str(self.period.in_words())
+    return str(self.get_time_period().in_words())
   
   def period_in_words(self, fmt=NICE_DATETIME_FORMAT) -> str:
     return f'{self.start_time.format(fmt)} to {self.end_time.format(fmt)}'

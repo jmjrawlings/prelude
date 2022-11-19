@@ -16,9 +16,9 @@ class ModelTest(Generic[M]):
     def create(cls) -> M:
         return cls.type()
     
-    def test_save_model(self):
+    def test_save_model(self, tmp_path):
         model = self.create()
-        model.save(self.name)
+        model.save(tmp_path / self.name)
 
     def test_copy_model(self):
         model = self.create()
