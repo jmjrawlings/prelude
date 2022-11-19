@@ -62,7 +62,9 @@
                 // Mermaid JS support
                 "bierner.markdown-mermaid",
                 // Dagger Language Server
-                "Dagger.dagger"
+                "Dagger.dagger",
+                // Docker integration
+                "ms-azuretools.vscode-docker"
             ]
         }
     },
