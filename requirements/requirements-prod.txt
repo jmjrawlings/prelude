@@ -35,6 +35,8 @@ decorator==5.1.1
     # via ipython
 defusedxml==0.7.1
     # via nbconvert
+duckdb==0.6.0
+    # via -r /app/requirements/requirements-prod.in
 entrypoints==0.4
     # via
     #   altair
@@ -132,6 +134,7 @@ notebook==6.4.12
 numpy==1.23.1
     # via
     #   altair
+    #   duckdb
     #   pandas
 packaging==21.3
     # via

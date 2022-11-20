@@ -67,6 +67,10 @@ defusedxml==0.7.1
     #   nbconvert
 docopt==0.6.2
     # via pytest-watch
+duckdb==0.6.0
+    # via
+    #   -c /app/requirements/requirements-prod.txt
+    #   -r /app/requirements/requirements-prod.in
 entrypoints==0.4
     # via
     #   -c /app/requirements/requirements-prod.txt
@@ -203,6 +207,7 @@ numpy==1.23.1
     # via
     #   -c /app/requirements/requirements-prod.txt
     #   altair
+    #   duckdb
     #   pandas
 packaging==21.3
     # via
