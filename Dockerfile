@@ -2,7 +2,7 @@
 # * Key Arguments
 # ********************************************************
 ARG PYTHON_VERSION=3.9
-ARG DAGGER_VERSION=0.2.30
+ARG DAGGER_VERSION=0.2.36
 ARG PYTHON_VENV=/opt/venv
 ARG APP_PATH=/app
 ARG USER_NAME=jmjr
@@ -130,17 +130,19 @@ RUN apt-get update \
 
 # Install zsh & oh-my-zsh
 USER ${USER_NAME}
-COPY .devcontainer/.p10k.zsh /home/$USER_NAME/.p10k.zsh
+WORKDIR /home/$USER_NAME
+COPY .devcontainer/.p10k.zsh .p10k.zsh
 RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/v1.1.3/zsh-in-docker.sh)" -- \
     -p git \
     -p docker \
     -p https://github.com/zsh-users/zsh-autosuggestions \
     -p https://github.com/zsh-users/zsh-completions && \
-    echo "[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh" >> ~/.zshrc
+    echo "[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh" >> ~/.zshrc && \
+    .oh-my-zsh/custom/themes/powerlevel10k/gitstatus/install
 
 # Install Python dependencies
 COPY ./requirements/requirements-dev.txt ./requirements.txt
-RUN pip-sync ./requirements.txt
+RUN pip-sync ./requirements.txt && rm ./requirements.txt
 
 CMD zsh
 
