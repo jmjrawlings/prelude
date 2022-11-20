@@ -2,7 +2,7 @@
 # * Key Arguments
 # ********************************************************
 ARG PYTHON_VERSION=3.9
-ARG DAGGER_VERSION=0.2.30
+ARG DAGGER_VERSION=0.2.36
 ARG PYTHON_VENV=/opt/venv
 ARG APP_PATH=/app
 ARG USER_NAME=jmjr
@@ -75,7 +75,7 @@ ARG DEBIAN_FRONTEND
 
 USER root
 
-# Install packages
+# Install core packages
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         curl \
@@ -97,7 +97,7 @@ RUN LATEST_COMPOSE_VERSION=$(curl -sSL "https://api.github.com/repos/docker/comp
     && curl -sSL "https://github.com/docker/compose/releases/download/${LATEST_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose \
     && chmod +x /usr/local/bin/docker-compose
 
-# Give docker access to the non-root user
+# Give Docker access to the non-root user
 RUN groupadd docker \
     && usermod -aG docker ${USER_NAME}
 
@@ -106,6 +106,14 @@ ARG DAGGER_VERSION
 RUN curl -sfL https://releases.dagger.io/dagger/install.sh | sh \
     && mv ./bin/dagger /usr/local/bin \
     && echo ${DAGGER_VERSION}
+
+# Install Github CLI
+RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+    && sudo apt update \
+    && sudo apt install gh -y \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Developer packages
 RUN apt-get update \
@@ -122,17 +130,19 @@ RUN apt-get update \
 
 # Install zsh & oh-my-zsh
 USER ${USER_NAME}
-COPY .devcontainer/.p10k.zsh /home/$USER_NAME/.p10k.zsh
+WORKDIR /home/$USER_NAME
+COPY .devcontainer/.p10k.zsh .p10k.zsh
 RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/v1.1.3/zsh-in-docker.sh)" -- \
     -p git \
     -p docker \
     -p https://github.com/zsh-users/zsh-autosuggestions \
     -p https://github.com/zsh-users/zsh-completions && \
-    echo "[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh" >> ~/.zshrc
+    echo "[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh" >> ~/.zshrc && \
+    .oh-my-zsh/custom/themes/powerlevel10k/gitstatus/install
 
 # Install Python dependencies
 COPY ./requirements/requirements-dev.txt ./requirements.txt
-RUN pip-sync ./requirements.txt
+RUN pip-sync ./requirements.txt && rm ./requirements.txt
 
 CMD zsh
 
@@ -182,6 +192,6 @@ ENV PYTHONDONTWRITEBYTECODE=0
 
 USER ${USER_NAME}
 WORKDIR ${APP_PATH}
-COPY ./src .
+COPY ./src ./src
 COPY ./requirements/requirements-prod.txt ./requirements.txt
 RUN pip-sync ./requirements.txt

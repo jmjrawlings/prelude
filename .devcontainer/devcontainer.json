@@ -8,7 +8,7 @@
         "target": "dev",
         "args": {
             "USER_NAME": "harken"
-        }
+        },
     },
 
     "workspaceFolder": "/app",
@@ -62,14 +62,19 @@
                 // Mermaid JS support
                 "bierner.markdown-mermaid",
                 // Dagger Language Server
-                "Dagger.dagger"
+                "Dagger.dagger",
+                // Docker integration
+                "ms-azuretools.vscode-docker",
+                // .env file support
+                "mikestead.dotenv"
             ]
         }
     },
             
     "runArgs": [ 
         "--init",
-        "--hostname", "host"
+        "--hostname", "host",
+        "--env-file", ".devcontainer/devcontainer.env"
     ],
 
     "containerEnv": {
