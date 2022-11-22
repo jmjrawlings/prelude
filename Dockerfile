@@ -3,6 +3,7 @@
 # ********************************************************
 ARG PYTHON_VERSION=3.9
 ARG DAGGER_VERSION=0.2.36
+ARG QUARTO_VERSION=1.2.269
 ARG PYTHON_VENV=/opt/venv
 ARG APP_PATH=/app
 ARG USER_NAME=jmjr
@@ -31,6 +32,7 @@ ARG USER_NAME
 ARG USER_GID
 ARG USER_UID
 ARG APP_PATH
+ARG OPT_PATH='/opt'
 
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 ENV PIP_NO_CACHE_DIR=1
@@ -72,6 +74,7 @@ ARG USER_NAME
 ARG USER_UID
 ARG USER_GID
 ARG DEBIAN_FRONTEND
+ARG QUARTO_VERSION
 
 USER root
 
@@ -127,6 +130,12 @@ RUN apt-get update \
         git \    
         zsh \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Quarto
+RUN wget https://github.com/quarto-dev/quarto-cli/releases/download/v$QUARTO_VERSION/quarto-$QUARTO_VERSION-linux-amd64.tar.gz \
+    && tar -C $OPT_PATH -xvzf quarto-$QUARTO_VERSION-linux-amd64.tar.gz \
+    && mkdir /home/${USER_NAME}/bin \
+    && ln -s $OPT_PATH/quarto-$QUARTO_VERSION/bin/quarto /home/${USER_NAME}/bin
 
 # Install zsh & oh-my-zsh
 USER ${USER_NAME}

@@ -142,6 +142,7 @@ ipykernel==6.15.1
     #   jupyter-console
     #   notebook
     #   qtconsole
+    #   quarto
 ipython==8.4.0
     # via
     #   -c /app/requirements/requirements-prod.txt
@@ -218,6 +219,7 @@ jupyter-core==4.11.1
     #   nbformat
     #   notebook
     #   qtconsole
+    #   quarto
 jupyter-server==1.18.1
     # via
     #   jupyterlab
@@ -262,6 +264,7 @@ nbclient==0.5.13
     #   -c /app/requirements/requirements-prod.txt
     #   -c /app/requirements/requirements-test.txt
     #   nbconvert
+    #   quarto
 nbconvert==6.5.0
     # via
     #   -c /app/requirements/requirements-prod.txt
@@ -277,6 +280,7 @@ nbformat==5.4.0
     #   nbclient
     #   nbconvert
     #   notebook
+    #   quarto
 nest-asyncio==1.5.5
     # via
     #   -c /app/requirements/requirements-prod.txt
@@ -442,6 +446,11 @@ pytzdata==2020.1
     #   -c /app/requirements/requirements-prod.txt
     #   -c /app/requirements/requirements-test.txt
     #   pendulum
+pyyaml==6.0
+    # via
+    #   -c /app/requirements/requirements-prod.txt
+    #   -c /app/requirements/requirements-test.txt
+    #   quarto
 pyzmq==23.2.0
     # via
     #   -c /app/requirements/requirements-prod.txt
@@ -461,6 +470,11 @@ qtpy==2.1.0
     #   -c /app/requirements/requirements-prod.txt
     #   -c /app/requirements/requirements-test.txt
     #   qtconsole
+quarto==0.1.0
+    # via
+    #   -c /app/requirements/requirements-prod.txt
+    #   -c /app/requirements/requirements-test.txt
+    #   -r /app/requirements/requirements-prod.in
 requests==2.28.1
     # via jupyterlab-server
 rich==12.5.1
