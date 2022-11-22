@@ -1,5 +1,4 @@
 -r requirements-test.in
 -c requirements-test.txt
-ipywidgets
-jupyterlab
+ipython
 pdbpp
