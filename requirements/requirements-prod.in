@@ -7,3 +7,5 @@ vega
 pandas
 strenum
 duckdb
+quarto
+nbdev

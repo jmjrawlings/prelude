@@ -2,13 +2,20 @@
 # * Key Arguments
 # ********************************************************
 ARG PYTHON_VERSION=3.9
+ARG UBUNTU_VERSION=20.04
 ARG DAGGER_VERSION=0.2.36
+ARG QUARTO_VERSION=1.2.269
+ARG MINIZINC_VERSION=2.6.0
+ARG ORTOOLS_VERSION=9.3
+ARG ORTOOLS_BUILD=10502
 ARG PYTHON_VENV=/opt/venv
+ARG MINIZINC_HOME=/usr/local/share/minizinc
 ARG APP_PATH=/app
-ARG USER_NAME=jmjr
+ARG USER_NAME=harken
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 ARG DEBIAN_FRONTEND=noninteractive
+ARG OPT_PATH=/opt
 
 # ********************************************************
 # * Python Builder
@@ -16,6 +23,57 @@ ARG DEBIAN_FRONTEND=noninteractive
 FROM python:${PYTHON_VERSION}-slim as python-builder
 ARG PYTHON_VENV
 RUN python -m venv ${PYTHON_VENV}
+
+# ********************************************************
+# * MiniZinc Builder
+# *
+# * This layer installs MiniZinc into the $MINIZINC_HOME
+# * directory which is later copied to other images.
+# *
+# * Google OR-Tools solver for MiniZinc is also installed
+# *
+# ********************************************************
+FROM minizinc/minizinc:${MINIZINC_VERSION} as minizinc-builder
+
+ARG UBUNTU_VERSION
+ARG MINIZINC_HOME
+ARG ORTOOLS_VERSION
+ARG ORTOOLS_BUILD
+ARG ORTOOLS_HOME=$MINIZINC_HOME/ortools
+ARG ORTOOLS_TAR_NAME=or-tools_amd64_flatzinc_ubuntu-${UBUNTU_VERSION}_v$ORTOOLS_VERSION.$ORTOOLS_BUILD
+ARG ORTOOLS_TAR_URL=https://github.com/google/or-tools/releases/download/v$ORTOOLS_VERSION/$ORTOOLS_TAR_NAME.tar.gz
+ARG DEBIAN_FRONTEND
+
+# Install required packages
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        wget \
+    && \
+    rm -rf /var/lib/apt/lists/*
+    
+# Install OR-Tools into MiniZinc directory
+RUN mkdir $ORTOOLS_HOME && \
+    wget -c $ORTOOLS_TAR_URL -O - | \
+    tar -xz -C $ORTOOLS_HOME --strip-components=1
+
+# Register OR-Tools as a MiniZinc solver
+RUN echo '{ \n\
+    "id": "org.ortools.ortools",\n\
+    "name": "OR Tools",\n\
+    "description": "Or Tools FlatZinc executable",\n\
+    "version": "'$ORTOOLS_VERSION/stable'",\n\
+    "mznlib": "../ortools/share/minizinc",\n\
+    "executable": "../ortools/bin/fzn-or-tools",\n\
+    "tags": ["cp","int", "lcg", "or-tools"], \n\
+    "stdFlags": ["-a", "-n", "-p", "-f", "-r", "-v", "-l", "-s"], \n\
+    "supportsMzn": false,\n\
+    "supportsFzn": true,\n\
+    "needsSolns2Out": true,\n\
+    "needsMznExecutable": false,\n\
+    "needsStdlibDir": false,\n\
+    "isGUIApplication": false\n\
+}' >> $MINIZINC_HOME/solvers/ortools.msc
 
 
 # ********************************************************
@@ -31,6 +89,8 @@ ARG USER_NAME
 ARG USER_GID
 ARG USER_UID
 ARG APP_PATH
+ARG OPT_PATH
+ARG MINIZINC_HOME
 
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 ENV PIP_NO_CACHE_DIR=1
@@ -45,11 +105,15 @@ RUN groupadd --gid ${USER_GID} ${USER_NAME} \
     && echo ${USER_NAME} ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USER_NAME} \
     && chmod 0440 /etc/sudoers.d/${USER_NAME}
  
-# Install python virtual env
+# Install Python virtual env
 COPY --from=python-builder --chown=${USER_UID}:${USER_GID} ${PYTHON_VENV} ${PYTHON_VENV}
 ENV VIRTUAL_ENV=$PYTHON_VENV
 ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
 RUN pip install pip-tools
+
+# Install Minizinc
+COPY --chown=$USERNAME --from=minizinc-builder $MINIZINC_HOME $MINIZINC_HOME
+COPY --chown=$USERNAME --from=minizinc-builder /usr/local/bin/ /usr/local/bin/
 
 # Create an assign app path
 RUN mkdir $APP_PATH && chown -R $USER_NAME $APP_PATH
@@ -72,6 +136,8 @@ ARG USER_NAME
 ARG USER_UID
 ARG USER_GID
 ARG DEBIAN_FRONTEND
+ARG QUARTO_VERSION
+ARG OPT_PATH
 
 USER root
 
@@ -128,6 +194,12 @@ RUN apt-get update \
         zsh \
     && rm -rf /var/lib/apt/lists/*
 
+# Install Quarto
+RUN wget https://github.com/quarto-dev/quarto-cli/releases/download/v$QUARTO_VERSION/quarto-$QUARTO_VERSION-linux-amd64.tar.gz \
+    && tar -C $OPT_PATH -xvzf quarto-$QUARTO_VERSION-linux-amd64.tar.gz \
+    && mkdir /home/${USER_NAME}/bin \
+    && ln -s $OPT_PATH/quarto-$QUARTO_VERSION/bin/quarto /home/${USER_NAME}/bin
+
 # Install zsh & oh-my-zsh
 USER ${USER_NAME}
 WORKDIR /home/$USER_NAME
@@ -167,8 +239,11 @@ WORKDIR ${APP_PATH}
 COPY ./src ./src
 COPY ./tests ./tests
 COPY ./pytest.ini .
+
+# Install Python dependencies
 COPY ./requirements/requirements-test.txt ./requirements.txt
 RUN pip-sync ./requirements.txt
+
 CMD pytest
 
 
@@ -193,5 +268,7 @@ ENV PYTHONDONTWRITEBYTECODE=0
 USER ${USER_NAME}
 WORKDIR ${APP_PATH}
 COPY ./src ./src
+
+# Install Python dependencies
 COPY ./requirements/requirements-prod.txt ./requirements.txt
 RUN pip-sync ./requirements.txt

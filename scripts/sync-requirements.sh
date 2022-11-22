@@ -2,23 +2,19 @@
 
 set -eo pipefail
 
-start_time=$SECONDS
 SCRIPT="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 REQ=$(dirname "$SCRIPT")/requirements
 
-echo 'Compiling prod requirements..'
-pip-compile "$REQ/requirements-prod.in" -o "$REQ/requirements-prod.txt"
-
-echo 'Compiling test requirements..'
-pip-compile "$REQ/requirements-test.in" -o "$REQ/requirements-test.txt"
-
-echo 'Compiling dev requirements..'
-pip-compile "$REQ/requirements-dev.in" -o "$REQ/requirements-dev.txt"
-
-echo 'Syncing dev environment'
-pip-sync "$REQ/requirements-dev.txt"
-
-end_time=$SECONDS
-elapsed="$(( end_time - start_time ))"
-
-echo "Requirements updated in $elapsed seconds"
+for ENV in prod test dev
+do
+  start_time=$SECONDS
+  echo -n "Compiling $ENV requirements ..."
+  pip-compile \
+    "$REQ/requirements-$ENV.in" \
+    --resolver=backtracking  \
+    --output-file "$REQ/requirements-$ENV.txt" \
+    2>/dev/null
+  end_time=$SECONDS
+  elapsed="$(( end_time - start_time ))"
+  echo " ${elapsed}s"
+done
