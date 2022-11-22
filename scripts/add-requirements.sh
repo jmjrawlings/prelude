@@ -2,4 +2,6 @@
 
 set -eo pipefail
 
-pip add "$1"
+echo "TODO"
+
+exit 1
