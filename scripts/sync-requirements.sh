@@ -8,13 +8,20 @@ REQ=$(dirname "$SCRIPT")/requirements
 for ENV in prod test dev
 do
   start_time=$SECONDS
+  input_file="$REQ/requirements-$ENV.in"
+  output_file="$REQ/requirements-$ENV.txt"
+  
   echo -n "Compiling $ENV requirements ..."
+    
   pip-compile \
-    "$REQ/requirements-$ENV.in" \
     --resolver=backtracking  \
-    --output-file "$REQ/requirements-$ENV.txt" \
+    --output-file "$output_file" \
+    $input_file \
     2>/dev/null
+
   end_time=$SECONDS
+  count=$(grep -c "^[a-Z]" ${output_file})
   elapsed="$(( end_time - start_time ))"
-  echo " ${elapsed}s"
+    
+  echo "\r${count} packages in ${elapsed}s"
 done
