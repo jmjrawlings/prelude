@@ -191,6 +191,7 @@ RUN apt-get update \
         inotify-tools \
         htop \                                                  
         git \    
+        tree \
         zsh \
     && rm -rf /var/lib/apt/lists/*
 
