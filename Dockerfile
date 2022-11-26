@@ -10,6 +10,7 @@ ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 ARG OPT_PATH=/opt
 ARG DEBIAN_FRONTEND=noninteractive
+ARG QUARTO_VERSION=1.2.269
 
 # ********************************************************
 # * Python Base
@@ -79,7 +80,6 @@ ARG USER_GID
 ARG USER_UID
 ARG APP_PATH
 ARG OPT_PATH
-ARG MINIZINC_HOME
 
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 ENV PIP_NO_CACHE_DIR=1
@@ -116,6 +116,7 @@ ARG USER_NAME
 ARG USER_UID
 ARG USER_GID
 ARG DEBIAN_FRONTEND
+ARG QUARTO_VERSION
 
 USER root
 
@@ -178,7 +179,6 @@ RUN echo 'deb [trusted=yes] https://repo.charm.sh/apt/ /' | tee /etc/apt/sources
     && apt-get update \
     && apt-get install -y gum \
     && rm -rf /var/lib/apt/lists/*
-    
 
 # Install zsh & oh-my-zsh
 USER ${USER_NAME}
@@ -192,13 +192,17 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
     echo "[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh" >> ~/.zshrc && \
     .oh-my-zsh/custom/themes/powerlevel10k/gitstatus/install
 
+# Install Quarto
+RUN wget https://github.com/quarto-dev/quarto-cli/releases/download/v$QUARTO_VERSION/quarto-$QUARTO_VERSION-linux-amd64.tar.gz \
+    && sudo tar -C $OPT_PATH -xvzf quarto-$QUARTO_VERSION-linux-amd64.tar.gz \
+    && mkdir ~/bin \
+    && ln -s $OPT_PATH/quarto-$QUARTO_VERSION/bin/quarto ~/bin
+
 # Install Python dependencies
 COPY --from=python-dev --chown=${USER_UID}:${USER_GID} ${PYTHON_VENV} ${PYTHON_VENV}
 RUN pip install pip-tools
 
-
 CMD zsh
-
 
 # ********************************************************
 # * Test 
