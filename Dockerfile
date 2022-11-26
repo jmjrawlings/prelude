@@ -66,8 +66,6 @@ COPY ./requirements/requirements-prod.txt ./requirements.txt
 RUN pip-sync ./requirements.txt && rm ./requirements.txt
 
 
-
-
 # ********************************************************
 # * Base Layer
 # *
@@ -212,10 +210,7 @@ RUN wget https://github.com/quarto-dev/quarto-cli/releases/download/v$QUARTO_VER
 # Install Python dependencies
 COPY --from=python-dev --chown=${USER_UID}:${USER_GID} ${PYTHON_VENV} ${PYTHON_VENV}
 RUN pip install pip-tools
-# Reinstall shapely with the system GEOS
-RUN pip install --force-reinstall --no-binary shapely --no-binary pygeos shapely
-# Reinstall pygeos with the system GEOS
-RUN pip install --force-reinstall --no-binary pygeos pygeos
+
 
 
 CMD zsh
@@ -235,18 +230,13 @@ ARG USER_UID
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-COPY ./requirements/requirements-test.txt ./requirements.txt
-RUN pip-sync ./requirements.txt
-
 USER ${USER_NAME}
 WORKDIR ${APP_PATH}
 COPY ./src ./src
 COPY ./tests ./tests
 COPY ./pytest.ini .
 
-# Install Python dependencies
-COPY ./requirements/requirements-test.txt ./requirements.txt
-RUN pip-sync ./requirements.txt
+COPY --from=python-test --chown=${USER_UID}:${USER_GID} ${PYTHON_VENV} ${PYTHON_VENV}
 
 CMD pytest
 
@@ -269,13 +259,8 @@ ARG USER_UID
 ENV PYTHONOPTIMIZE=2
 ENV PYTHONDONTWRITEBYTECODE=0
 
-COPY ./requirements/requirements-prod.txt ./requirements.txt
-RUN pip-sync ./requirements.txt  
-
 USER ${USER_NAME}
 WORKDIR ${APP_PATH}
 COPY ./src ./src
 
-# Install Python dependencies
-COPY ./requirements/requirements-prod.txt ./requirements.txt
-RUN pip-sync ./requirements.txt  
+COPY --from=python-prod --chown=${USER_UID}:${USER_GID} ${PYTHON_VENV} ${PYTHON_VENV}

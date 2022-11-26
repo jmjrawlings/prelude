@@ -16,8 +16,9 @@ do
   pip-compile \
     --resolver=backtracking  \
     --output-file "$output_file" \
-    $input_file \
-    2>/dev/null
+    --pip-args "--no-binary shapely geos" \
+    $input_file 
+    # \    2>/dev/null
 
   end_time=$SECONDS
   count=$(grep -c "^[a-Z]" ${output_file})

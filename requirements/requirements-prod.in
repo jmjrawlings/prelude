@@ -4,13 +4,13 @@ cattrs
 duckdb
 fiona
 geopandas
+ipywidgets
+nbdev
 pandas
 pendulum
+pygeos
+quarto
 rich
 shapely
 strenum
-duckdb
-ipywidgets
-quarto
-nbdev
 vega
