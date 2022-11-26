@@ -8,7 +8,7 @@
         "target": "dev",
         "args": {
             "USER_NAME": "harken"
-        },
+        }
     },
 
     "workspaceFolder": "/app",
@@ -66,9 +66,8 @@
                 // Docker integration
                 "ms-azuretools.vscode-docker",
                 // .env file support
-                "mikestead.dotenv",
-                // Quarto
-                "quarto.quarto"
+                "mikestead.dotenv"
+
             ]
         }
     },
