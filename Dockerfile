@@ -232,18 +232,18 @@ ARG APP_PATH
 ARG USER_NAME
 ARG USER_GID
 ARG USER_UID
+
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
+
+COPY ./requirements/requirements-test.txt ./requirements.txt
+RUN pip-sync ./requirements.txt
 
 USER ${USER_NAME}
 WORKDIR ${APP_PATH}
 COPY ./src ./src
 COPY ./tests ./tests
 COPY ./pytest.ini .
-
-# Install Python dependencies
-COPY ./requirements/requirements-test.txt ./requirements.txt
-RUN pip-sync ./requirements.txt
 
 CMD pytest
 
@@ -266,10 +266,9 @@ ARG USER_UID
 ENV PYTHONOPTIMIZE=2
 ENV PYTHONDONTWRITEBYTECODE=0
 
+COPY ./requirements/requirements-prod.txt ./requirements.txt
+RUN pip-sync ./requirements.txt  
+
 USER ${USER_NAME}
 WORKDIR ${APP_PATH}
 COPY ./src ./src
-
-# Install Python dependencies
-COPY ./requirements/requirements-prod.txt ./requirements.txt
-RUN pip-sync ./requirements.txt
