@@ -99,6 +99,15 @@ RUN groupadd --gid ${USER_GID} ${USER_NAME} \
 # Create an assign app path
 RUN mkdir $APP_PATH && chown -R $USER_NAME $APP_PATH
 
+
+# Install libgeos
+# By doing this ourselves we can use the same libgeos version
+# for multiple other packages eg (Shapely / Geopandas / Momepy / PyGeos)
+RUN apt-get update && apt-get install -y \
+        libgeos-dev && \
+    rm -rf /var/lib/apt/lists/
+
+
 # ********************************************************
 # * Dev 
 # * 
@@ -201,6 +210,11 @@ RUN wget https://github.com/quarto-dev/quarto-cli/releases/download/v$QUARTO_VER
 # Install Python dependencies
 COPY --from=python-dev --chown=${USER_UID}:${USER_GID} ${PYTHON_VENV} ${PYTHON_VENV}
 RUN pip install pip-tools
+# Reinstall shapely with the system GEOS
+RUN pip install --force-reinstall --no-binary shapely --no-binary pygeos shapely
+# Reinstall pygeos with the system GEOS
+RUN pip install --force-reinstall --no-binary pygeos pygeos
+
 
 CMD zsh
 

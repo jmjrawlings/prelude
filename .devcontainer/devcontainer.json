@@ -1,6 +1,6 @@
 {
     // Name appearing in the bottom left corner
-    "name": "nbdev",
+    "name": "geospatial",
                     
     "build":{
         "dockerfile": "../Dockerfile",

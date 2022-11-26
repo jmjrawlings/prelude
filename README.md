@@ -5,8 +5,7 @@
 Batteries included python development environments using [Devcontainers](https://code.visualstudio.com/docs/devcontainers/containers)
 
 ## Repository
-
-
+            
 
 ## Package Management
 
