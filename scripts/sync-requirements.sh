@@ -16,8 +16,7 @@ do
   pip-compile \
     --resolver=backtracking  \
     --output-file "$output_file" \
-    $input_file \
-    2>/dev/null
+    $input_file
 
   end_time=$SECONDS
   count=$(grep -c "^[a-Z]" ${output_file})
