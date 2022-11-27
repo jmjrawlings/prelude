@@ -3,6 +3,11 @@
 # ********************************************************
 ARG PYTHON_VERSION=3.9.14
 ARG DAGGER_VERSION=0.2.36
+ARG MINIZINC_VERSION=2.6.0
+ARG ORTOOLS_VERSION=9.3
+ARG ORTOOLS_BUILD=10502
+ARG UBUNTU_VERSION=20.04
+ARG MINIZINC_HOME=/usr/local/share/minizinc
 ARG PYTHON_VENV=/opt/venv
 ARG APP_PATH=/app
 ARG USER_NAME=harken
@@ -11,6 +16,56 @@ ARG USER_GID=$USER_UID
 ARG OPT_PATH=/opt
 ARG DEBIAN_FRONTEND=noninteractive
 ARG QUARTO_VERSION=1.2.269
+
+# ********************************************************
+# * MiniZinc Builder
+#
+# This layer installs MiniZinc into the $MINIZINC_HOME
+# directory which is later copied to other images.
+#
+# Google OR-Tools solver for MiniZinc is also installed
+#
+# ********************************************************
+FROM minizinc/minizinc:${MINIZINC_VERSION} as minizinc-builder
+
+ARG UBUNTU_VERSION
+ARG MINIZINC_HOME
+ARG ORTOOLS_VERSION
+ARG ORTOOLS_BUILD
+ARG ORTOOLS_HOME=$MINIZINC_HOME/ortools
+ARG ORTOOLS_TAR_NAME=or-tools_amd64_flatzinc_ubuntu-${UBUNTU_VERSION}_v${ORTOOLS_VERSION}.${ORTOOLS_BUILD}
+ARG ORTOOLS_TAR_URL=https://github.com/google/or-tools/releases/download/v${ORTOOLS_VERSION}/${ORTOOLS_TAR_NAME}.tar.gz
+ARG ORTOOLS_MSC=$MINIZINC_HOME/solvers/ortools.msc
+ARG DEBIAN_FRONTEND
+
+# Install required packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# # Install OR-Tools into MiniZinc directory
+RUN mkdir $ORTOOLS_HOME && \
+    wget -c $ORTOOLS_TAR_URL -O - | \
+    tar -xz -C $ORTOOLS_HOME --strip-components=1
+
+# Register OR-Tools as a MiniZinc solver
+RUN echo '{ \n\
+    "id": "org.ortools.ortools",\n\
+    "name": "OR Tools",\n\
+    "description": "Or Tools FlatZinc executable",\n\
+    "version": "'$ORTOOLS_VERSION/stable'",\n\
+    "mznlib": "../ortools/share/minizinc",\n\
+    "executable": "../ortools/bin/fzn-or-tools",\n\
+    "tags": ["cp","int", "lcg", "or-tools"], \n\
+    "stdFlags": ["-a", "-n", "-p", "-f", "-r", "-v", "-l", "-s"], \n\
+    "supportsMzn": false,\n\
+    "supportsFzn": true,\n\
+    "needsSolns2Out": true,\n\
+    "needsMznExecutable": false,\n\
+    "needsStdlibDir": false,\n\
+    "isGUIApplication": false\n\
+}' >> $ORTOOLS_MSC
 
 # ********************************************************
 # * Python Base
@@ -80,6 +135,7 @@ ARG USER_GID
 ARG USER_UID
 ARG APP_PATH
 ARG OPT_PATH
+ARG MINIZINC_HOME
 
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 ENV PIP_NO_CACHE_DIR=1
@@ -98,6 +154,10 @@ RUN groupadd --gid ${USER_GID} ${USER_NAME} \
 
 # Create an assign app path
 RUN mkdir $APP_PATH && chown -R $USER_NAME $APP_PATH
+
+# Install MiniZinc + ORTools from the build layer
+COPY --from=minizinc-builder $MINIZINC_HOME $MINIZINC_HOME
+COPY --from=minizinc-builder /usr/local/bin/ /usr/local/bin/
 
 # ********************************************************
 # * Dev 
