@@ -68,7 +68,9 @@
                 // .env file support
                 "mikestead.dotenv",
                 // Quarto
-                "quarto.quarto"
+                "quarto.quarto",
+                // Minizinc
+                "DekkerOne.minizinc"
 
             ]
         }
