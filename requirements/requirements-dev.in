@@ -1,4 +1,8 @@
 -r requirements-test.in
 -c requirements-test.txt
-ipython
+ipywidgets
+jupyterlab
 pdbpp
+typer
+colorama
+shellingham
