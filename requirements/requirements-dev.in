@@ -3,3 +3,6 @@
 ipywidgets
 jupyterlab
 pdbpp
+typer
+colorama
+shellingham
