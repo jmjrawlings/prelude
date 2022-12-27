@@ -172,6 +172,7 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | s
 # Install Developer packages
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
+        autojump \
         fonts-powerline \
         openssh-client \
         micro \
@@ -196,6 +197,7 @@ COPY .devcontainer/.p10k.zsh .p10k.zsh
 RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/v1.1.3/zsh-in-docker.sh)" -- \
     -p git \
     -p docker \
+    -p autojump \
     -p https://github.com/zsh-users/zsh-autosuggestions \
     -p https://github.com/zsh-users/zsh-completions && \
     echo "[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh" >> ~/.zshrc && \

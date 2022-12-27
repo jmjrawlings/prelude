@@ -2,3 +2,9 @@
 -c requirements-test.txt
 ipython
 pdbpp
+ipywidgets
+jupyterlab
+pdbpp
+typer
+colorama
+shellingham
