@@ -1,6 +1,6 @@
 {
     // Name appearing in the bottom left corner
-    "name": "prelude",
+    "name": "python",
                     
     "build":{
         "dockerfile": "../Dockerfile",
