@@ -1,6 +1,6 @@
 {
     // Name appearing in the bottom left corner
-    "name": "geospatial",
+    "name": "python-geospatial",
                     
     "build":{
         "dockerfile": "../Dockerfile",
@@ -66,9 +66,7 @@
                 // Docker integration
                 "ms-azuretools.vscode-docker",
                 // .env file support
-                "mikestead.dotenv",
-                // Quarto
-                "quarto.quarto"
+                "mikestead.dotenv"
 
             ]
         }
