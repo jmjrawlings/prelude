@@ -11,14 +11,14 @@
         }
     },
 
-    "workspaceFolder": "/app",
-    "workspaceMount": "source=${localWorkspaceFolder},target=/app,type=bind,consistency=cached",
+    "workspaceFolder": "/${localWorkspaceFolderBasename}",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/${localWorkspaceFolderBasename},type=bind,consistency=cached",
         
     "mounts":[
         // Mount the hosts docker engine for dagger
         "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
         // [Optional] Use a volume to install VSCode extensions, see https://code.visualstudio.com/remote/advancedcontainers/avoid-extension-reinstalls
-        "source=vscode-extensions,target=/root/.vscode-server/extensions,type=volume"
+        // "source=vscode-extensions,target=/root/.vscode-server/extensions,type=volume"
     ],
 
     "customizations": {
