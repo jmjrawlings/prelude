@@ -64,27 +64,17 @@ select_branch_name() {
 select_project_name() {
     FG="2"
 
-    if [[ ! $PROJECT_NAME ]] 
+    if [[ "$BRANCH_NAME" == "master" ]]
     then
-
-        if [[ "$BRANCH_NAME" == "master" ]]
-        then
-            DEFAULT="my-project"
-        else
-            DEFAULT="my-$BRANCH_NAME-project"
-        fi
-
-        printf "Enter a %s\n" \
-            "$(gum style 'Project Name:')"
-        PROJECT_NAME=$(gum input --placeholder "$DEFAULT") 
+        DEFAULT="my-project"
+    else
+        DEFAULT="my-$BRANCH_NAME-project"
     fi
-
-    if [[ ! $PROJECT_NAME ]]
-    then
-        printf 'Error: No project name was provided.'
-        exit 1
-    fi
-
+    
+    printf "Enter a %s\n" \
+        "$(gum style 'Project Name:')"
+    PROJECT_NAME=$(gum input --placeholder "$DEFAULT")
+    PROJECT_NAME=${PROJECT_NAME:=$DEFAULT}
     printf "%s\n\n" \
         "$(gum style --foreground "$FG" "$PROJECT_NAME")"
 }
@@ -107,7 +97,6 @@ do_create() {
     #          --title "Cloning Project Template" \
     #          -- \
     git clone \
-        --depth=1 \
         --single-branch \
         --branch "$BRANCH_NAME" \
         "$REPO_DIR" \
