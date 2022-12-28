@@ -1,4 +1,6 @@
 -r requirements-test.in
 -c requirements-test.txt
-ipython
 pdbpp
+typer
+colorama
+shellingham

@@ -7,6 +7,7 @@ vega
 pandas
 strenum
 duckdb
+ipython
 ipywidgets
+ipykernel
 quarto
-nbdev
