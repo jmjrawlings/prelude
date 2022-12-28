@@ -1,6 +1,6 @@
 {
     // Name appearing in the bottom left corner
-    "name": "optimisation",
+    "name": "python-optimisation",
                     
     "build":{
         "dockerfile": "../Dockerfile",
