@@ -1,6 +1,6 @@
 {
     // Name appearing in the bottom left corner
-    "name": "python",
+    "name": "prelude",
                     
     "build":{
         "dockerfile": "../Dockerfile",
@@ -25,21 +25,6 @@
         "vscode": {
             "settings": {
 
-                // Python
-                "python.defaultInterpreterPath": "/opt/venv/bin",
-                "python.pythonPath": "/opt/venv/bin",
-                "python.disableInstallationCheck": true,
-                "python.languageServer": "Pylance",
-                "python.linting.enabled": true,
-                "python.analysis.typeCheckingMode": "basic",
-                "python.analysis.diagnosticSeverityOverrides": {
-                    "reportUnboundVariable" : "information",
-                    "reportOptionalMemberAccess": "warning"
-                },
-                "python.testing.pytestEnabled": true,
-                "python.testing.pytestArgs": ["tests"],
-                "python.testing.unittestEnabled": false,
-                "python.testing.nosetestsEnabled": false,
                 "terminal.integrated.defaultProfile.linux": "zsh",
                 "terminal.integrated.profiles.linux": {
                     "zsh": {
@@ -53,10 +38,6 @@
             },
 
             "extensions": [
-                // Offical python plugin
-                "ms-python.python",
-                // Jupyter notebook integration
-                "ms-toolsai.jupyter",
                 // Access workspace via web browser (good for .html)
                 "ritwickdey.liveserver",
                 // Mermaid JS support

@@ -12,60 +12,6 @@ ARG OPT_PATH=/opt
 ARG DEBIAN_FRONTEND=noninteractive
 
 # ********************************************************
-# * Python Base
-# ********************************************************
-FROM python:${PYTHON_VERSION}-slim as python-base
-
-ARG PYTHON_VENV
-ENV PIP_DISABLE_PIP_VERSION_CHECK=1
-ENV PIP_NO_CACHE_DIR=1
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV VIRTUAL_ENV=$PYTHON_VENV
-ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
-
-# Create the python virtual environment
-RUN python -m venv ${PYTHON_VENV}
-
-# Install build dependencies
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        build-essential \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN pip install pip-tools
-
-WORKDIR ${PYTHON_VENV}
-
-
-# ********************************************************
-# * Python Dev Venv
-# ********************************************************
-FROM python-base as python-dev
-
-COPY ./requirements/requirements-dev.txt ./requirements.txt
-RUN pip-sync ./requirements.txt && rm ./requirements.txt
-
-
-# ********************************************************
-# * Python Test Venv
-# ********************************************************
-FROM python-base as python-test
-
-COPY ./requirements/requirements-test.txt ./requirements.txt
-RUN pip-sync ./requirements.txt && rm ./requirements.txt
-
-
-# ********************************************************
-# * Python Prod Venv
-# ********************************************************
-FROM python-base as python-prod
-
-COPY ./requirements/requirements-prod.txt ./requirements.txt
-RUN pip-sync ./requirements.txt && rm ./requirements.txt
-
-
-# ********************************************************
 # * Base Layer
 # *
 # * Dependencies and environment variables used
@@ -179,7 +125,6 @@ RUN echo 'deb [trusted=yes] https://repo.charm.sh/apt/ /' | tee /etc/apt/sources
     && apt-get update \
     && apt-get install -y gum \
     && rm -rf /var/lib/apt/lists/*
-    
 
 # Install zsh & oh-my-zsh
 USER ${USER_NAME}
@@ -194,61 +139,5 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
     echo "[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh" >> ~/.zshrc && \
     .oh-my-zsh/custom/themes/powerlevel10k/gitstatus/install
 
-# Install Python dependencies
-COPY --from=python-dev --chown=${USER_UID}:${USER_GID} ${PYTHON_VENV} ${PYTHON_VENV}
-RUN pip install pip-tools
-
 
 CMD zsh
-
-
-# ********************************************************
-# * Test 
-# *
-# * This target contains python source code, testing code 
-# * and all dependencies required to run the test suite.
-# ********************************************************
-FROM base as test
-
-ARG APP_PATH
-ARG USER_NAME
-ARG USER_GID
-ARG USER_UID
-
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-
-USER ${USER_NAME}
-WORKDIR ${APP_PATH}
-COPY ./src ./src
-COPY ./tests ./tests
-COPY ./pytest.ini .
-
-COPY --from=python-test --chown=${USER_UID}:${USER_GID} ${PYTHON_VENV} ${PYTHON_VENV}
-
-CMD pytest
-
-
-# ********************************************************
-# * Prod 
-# * 
-# * This target contains only the python source code and 
-# * packages required to run the app.
-# * 
-# * The goal here is the smallest and fastest image possible
-# ********************************************************
-FROM base as prod
-
-ARG APP_PATH
-ARG USER_NAME
-ARG USER_GID
-ARG USER_UID
-
-ENV PYTHONOPTIMIZE=2
-ENV PYTHONDONTWRITEBYTECODE=0
-
-USER ${USER_NAME}
-WORKDIR ${APP_PATH}
-COPY ./src ./src
-
-COPY --from=python-prod --chown=${USER_UID}:${USER_GID} ${PYTHON_VENV} ${PYTHON_VENV}
