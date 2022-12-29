@@ -5,7 +5,6 @@
     "build":{
         "dockerfile": "../Dockerfile",
         "context": "..",
-        "target": "dev",
         "args": {
             "USER_NAME": "harken"
         }

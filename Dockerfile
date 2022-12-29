@@ -36,13 +36,14 @@ RUN pip install pip-tools
 
 WORKDIR ${PYTHON_VENV}
 
+
 # ********************************************************
 # * Base Layer
 # *
 # * Dependencies and environment variables used
 # * by other targets.
 # ********************************************************
-FROM python:${PYTHON_VERSION}-slim as base
+FROM python:${PYTHON_VERSION}-slim
 
 ARG PYTHON_VENV
 ARG USER_NAME
@@ -69,26 +70,6 @@ RUN groupadd --gid ${USER_GID} ${USER_NAME} \
 
 # Create an assign app path
 RUN mkdir $APP_PATH && chown -R $USER_NAME $APP_PATH
-
-# ********************************************************
-# * Dev 
-# * 
-# * This target contains everything needed for a fully 
-# * featured development environment.  It is intended to 
-# * be used as a devcontainer via VSCode remote development
-# * extension.
-# * 
-# * See https://code.visualstudio.com/docs/remote/containers
-# ********************************************************
-FROM base as dev
-
-ARG PYTHON_VENV
-ARG USER_NAME
-ARG USER_UID
-ARG USER_GID
-ARG DEBIAN_FRONTEND
-
-USER root
 
 # Install core packages
 RUN apt-get update \
@@ -160,5 +141,8 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
 
 # Install Python dependencies
 COPY --from=python-base --chown=${USER_UID}:${USER_GID} ${PYTHON_VENV} ${PYTHON_VENV}
+COPY requirements.txt ./requirements.txt
+RUN pip-sync ./requirements.txt && rm ./requirements.txt
+
 
 CMD zsh
