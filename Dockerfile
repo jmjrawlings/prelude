@@ -1,8 +1,7 @@
 # ********************************************************
 # * Key Arguments
 # ********************************************************
-ARG PYTHON_VERSION=3.9.14
-ARG DAGGER_VERSION=0.2.36
+ARG PYTHON_VERSION=3.10
 ARG PYTHON_VENV=/opt/venv
 ARG APP_PATH=/app
 ARG USER_NAME=harken
@@ -33,19 +32,9 @@ RUN apt-get update \
         build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install pip-tools
+RUN pip install pip-tools dagger-io
 
 WORKDIR ${PYTHON_VENV}
-
-
-# ********************************************************
-# * Python Dev Venv
-# ********************************************************
-FROM python-base as python-dev
-
-COPY ./requirements/requirements-dev.txt ./requirements.txt
-RUN pip-sync ./requirements.txt && rm ./requirements.txt
-
 
 # ********************************************************
 # * Base Layer
@@ -169,5 +158,7 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
     echo "[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh" >> ~/.zshrc && \
     .oh-my-zsh/custom/themes/powerlevel10k/gitstatus/install
 
+# Install Python dependencies
+COPY --from=python-base --chown=${USER_UID}:${USER_GID} ${PYTHON_VENV} ${PYTHON_VENV}
 
 CMD zsh

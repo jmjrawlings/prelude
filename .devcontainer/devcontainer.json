@@ -38,6 +38,8 @@
             },
 
             "extensions": [
+                // Python
+                "ms-python.python",
                 // Access workspace via web browser (good for .html)
                 "ritwickdey.liveserver",
                 // Mermaid JS support
