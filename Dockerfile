@@ -32,7 +32,7 @@ RUN apt-get update \
         build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install pip-tools dagger-io
+RUN pip install pip-tools
 
 WORKDIR ${PYTHON_VENV}
 

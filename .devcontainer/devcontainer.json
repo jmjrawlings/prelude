@@ -25,6 +25,21 @@
         "vscode": {
             "settings": {
 
+                "python.defaultInterpreterPath": "/opt/venv/bin",
+                "python.pythonPath": "/opt/venv/bin",
+                "python.disableInstallationCheck": true,
+                "python.languageServer": "Pylance",
+                "python.linting.enabled": true,
+                "python.analysis.typeCheckingMode": "basic",
+                "python.analysis.diagnosticSeverityOverrides": {
+                    "reportUnboundVariable" : "information",
+                    "reportOptionalMemberAccess": "warning"
+                },
+                "python.testing.pytestEnabled": true,
+                "python.testing.pytestArgs": ["tests"],
+                "python.testing.unittestEnabled": false,
+                "python.testing.nosetestsEnabled": false,
+
                 "terminal.integrated.defaultProfile.linux": "zsh",
                 "terminal.integrated.profiles.linux": {
                     "zsh": {
