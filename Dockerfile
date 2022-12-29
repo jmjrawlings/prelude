@@ -12,6 +12,42 @@ ARG OPT_PATH=/opt
 ARG DEBIAN_FRONTEND=noninteractive
 
 # ********************************************************
+# * Python Base
+# ********************************************************
+FROM python:${PYTHON_VERSION}-slim as python-base
+
+ARG PYTHON_VENV
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1
+ENV PIP_NO_CACHE_DIR=1
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV VIRTUAL_ENV=$PYTHON_VENV
+ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
+
+# Create the python virtual environment
+RUN python -m venv ${PYTHON_VENV}
+
+# Install build dependencies
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install pip-tools
+
+WORKDIR ${PYTHON_VENV}
+
+
+# ********************************************************
+# * Python Dev Venv
+# ********************************************************
+FROM python-base as python-dev
+
+COPY ./requirements/requirements-dev.txt ./requirements.txt
+RUN pip-sync ./requirements.txt && rm ./requirements.txt
+
+
+# ********************************************************
 # * Base Layer
 # *
 # * Dependencies and environment variables used
