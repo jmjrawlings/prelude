@@ -91,12 +91,6 @@ RUN LATEST_COMPOSE_VERSION=$(curl -sSL "https://api.github.com/repos/docker/comp
 RUN groupadd docker \
     && usermod -aG docker ${USER_NAME}
 
-# Install Dagger - TODO: pin version, should be refreshed to due to ARG
-ARG DAGGER_VERSION
-RUN curl -sfL https://releases.dagger.io/dagger/install.sh | sh \
-    && mv ./bin/dagger /usr/local/bin \
-    && echo ${DAGGER_VERSION}
-
 # Install Github CLI
 RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
     && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
