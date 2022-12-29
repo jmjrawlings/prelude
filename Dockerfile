@@ -3,12 +3,20 @@
 # ********************************************************
 ARG PYTHON_VERSION=3.10
 ARG PYTHON_VENV=/opt/venv
+ARG NODE_VERSION=19
 ARG APP_PATH=/app
 ARG USER_NAME=harken
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 ARG OPT_PATH=/opt
 ARG DEBIAN_FRONTEND=noninteractive
+
+# ********************************************************
+# * Node Base
+# ********************************************************
+FROM node:${NODE_VERSION} as node-base
+RUN npm install -g @devcontainers/cli
+
 
 # ********************************************************
 # * Python Base
@@ -139,10 +147,16 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
     echo "[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh" >> ~/.zshrc && \
     .oh-my-zsh/custom/themes/powerlevel10k/gitstatus/install
 
+# Install NodeJS
+COPY --from=node-base /usr/lib /usr/lib
+COPY --from=node-base /usr/local/share /usr/local/share
+COPY --from=node-base /usr/local/lib /usr/local/lib
+COPY --from=node-base /usr/local/include /usr/local/include
+COPY --from=node-base /usr/local/bin /usr/local/bin
+
 # Install Python dependencies
 COPY --from=python-base --chown=${USER_UID}:${USER_GID} ${PYTHON_VENV} ${PYTHON_VENV}
 COPY requirements.txt ./requirements.txt
 RUN pip-sync ./requirements.txt && rm ./requirements.txt
-
 
 CMD zsh
