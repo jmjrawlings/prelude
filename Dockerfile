@@ -8,8 +8,8 @@ ARG APP_PATH=/app
 ARG USER_NAME=harken
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
-ARG OPT_PATH=/opt
 ARG DEBIAN_FRONTEND=noninteractive
+ARG REQUIREMENTS_TXT='requirements.txt'
 
 
 # ********************************************************
@@ -47,20 +47,20 @@ WORKDIR ${PYTHON_VENV}
 
 
 # ********************************************************
-# * Base Layer
+# * Dev Layer
 # *
 # * Dependencies and environment variables used
 # * by other targets.
 # ********************************************************
-FROM python:${PYTHON_VERSION}-slim
+FROM python:${PYTHON_VERSION}-slim AS dev
 
 ARG PYTHON_VENV
 ARG USER_NAME
 ARG USER_GID
 ARG USER_UID
 ARG APP_PATH
-ARG OPT_PATH
 ARG MINIZINC_HOME
+ARG REQUIREMENTS_TXT
 
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 ENV PIP_NO_CACHE_DIR=1
@@ -134,19 +134,7 @@ RUN echo 'deb [trusted=yes] https://repo.charm.sh/apt/ /' | tee /etc/apt/sources
     && apt-get update \
     && apt-get install -y gum \
     && rm -rf /var/lib/apt/lists/*
-
-# Install zsh & oh-my-zsh
-USER ${USER_NAME}
-WORKDIR /home/$USER_NAME
-COPY .devcontainer/.p10k.zsh .p10k.zsh
-RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/v1.1.3/zsh-in-docker.sh)" -- \
-    -p git \
-    -p docker \
-    -p autojump \
-    -p https://github.com/zsh-users/zsh-autosuggestions \
-    -p https://github.com/zsh-users/zsh-completions && \
-    echo "[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh" >> ~/.zshrc && \
-    .oh-my-zsh/custom/themes/powerlevel10k/gitstatus/install
+ 
 
 # Install NodeJS
 COPY --from=node-base /usr/lib /usr/lib
@@ -157,7 +145,7 @@ COPY --from=node-base /usr/local/bin /usr/local/bin
 
 # Install Python dependencies
 COPY --from=python-base --chown=${USER_UID}:${USER_GID} ${PYTHON_VENV} ${PYTHON_VENV}
-COPY requirements.txt ./requirements.txt
+COPY $REQUIREMENTS_TXT ./requirements.txt
 RUN pip-sync ./requirements.txt && rm ./requirements.txt
 
 CMD zsh
