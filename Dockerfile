@@ -4,20 +4,17 @@
 ARG PYTHON_VERSION=3.10
 ARG PYTHON_VENV=/opt/venv
 ARG NODE_VERSION=19
-ARG APP_PATH=/app
 ARG USER_NAME=harken
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 ARG DEBIAN_FRONTEND=noninteractive
 ARG REQUIREMENTS_TXT='requirements.txt'
 
-
 # ********************************************************
 # * Node Base
 # ********************************************************
 FROM node:${NODE_VERSION} as node-base
 RUN npm install -g @devcontainers/cli
-
 
 # ********************************************************
 # * Python Base
@@ -31,6 +28,7 @@ ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV VIRTUAL_ENV=$PYTHON_VENV
 ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
+ARG REQUIREMENTS_TXT
 
 # Create the python virtual environment
 RUN python -m venv ${PYTHON_VENV}
@@ -38,19 +36,23 @@ RUN python -m venv ${PYTHON_VENV}
 # Install build dependencies
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        build-essential \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install pip-tools
+# Install pip-tools
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install pip-tools
+
+# Install package dependencies
+COPY $REQUIREMENTS_TXT ./requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip-sync ./requirements.txt \
+    && rm ./requirements.txt
 
 WORKDIR ${PYTHON_VENV}
 
-
 # ********************************************************
-# * Dev Layer
-# *
-# * Dependencies and environment variables used
-# * by other targets.
+# * Devcontainer
 # ********************************************************
 FROM python:${PYTHON_VERSION}-slim AS dev
 
@@ -58,6 +60,7 @@ ARG PYTHON_VENV
 ARG USER_NAME
 ARG USER_GID
 ARG USER_UID
+ARG USER_HOME=/home/$USER_NAME
 ARG APP_PATH
 ARG MINIZINC_HOME
 ARG REQUIREMENTS_TXT
@@ -69,6 +72,11 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV VIRTUAL_ENV=$PYTHON_VENV
 ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
 
+# Enable keeping apt packages so we can use docker caching
+RUN rm -f /etc/apt/apt.conf.d/docker-clean \
+    && echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' \
+    | tee /etc/apt/apt.conf.d/keep-cache
+
 # Add a non-root user
 RUN groupadd --gid ${USER_GID} ${USER_NAME} \
     && useradd --uid ${USER_UID} --gid ${USER_GID} -m ${USER_NAME} \
@@ -77,24 +85,23 @@ RUN groupadd --gid ${USER_GID} ${USER_NAME} \
     && echo ${USER_NAME} ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USER_NAME} \
     && chmod 0440 /etc/sudoers.d/${USER_NAME}
 
-# Create an assign app path
-RUN mkdir $APP_PATH && chown -R $USER_NAME $APP_PATH
-
 # Install core packages
-RUN apt-get update \
+RUN --mount=type=cache,target=/var/cache/apt \
+    apt-get update \
     && apt-get install -y --no-install-recommends \
-        curl \
-        gnupg2 \
-        locales \
-        lsb-release \
-        wget \
+    curl \
+    gnupg2 \
+    locales \
+    lsb-release \
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Docker CE CLI
-RUN curl -fsSL https://download.docker.com/linux/$(lsb_release -is | tr '[:upper:]' '[:lower:]')/gpg | apt-key add - 2>/dev/null \
+RUN --mount=type=cache,target=/var/cache/apt \
+    curl -fsSL https://download.docker.com/linux/$(lsb_release -is | tr '[:upper:]' '[:lower:]')/gpg | apt-key add - 2>/dev/null \
     && echo "deb [arch=amd64] https://download.docker.com/linux/$(lsb_release -is | tr '[:upper:]' '[:lower:]') $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list \
     && apt-get update && apt-get install -y --no-install-recommends \
-        docker-ce-cli \
+    docker-ce-cli \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Docker Compose
@@ -107,34 +114,49 @@ RUN groupadd docker \
     && usermod -aG docker ${USER_NAME}
 
 # Install Github CLI
-RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
-    && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+RUN --mount=type=cache,target=/var/cache/apt \
+    curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
     && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-    && sudo apt update \
-    && sudo apt install gh -y \
+    && apt update \
+    && apt install gh -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Developer packages
-RUN apt-get update \
+RUN --mount=type=cache,target=/var/cache/apt \
+    apt-get update \
     && apt-get install -y --no-install-recommends \
-        autojump \
-        fonts-powerline \
-        openssh-client \
-        micro \
-        less \
-        inotify-tools \
-        htop \                                                  
-        git \    
-        tree \
-        zsh \
+    autojump \
+    fonts-powerline \
+    openssh-client \
+    micro \
+    less \
+    inotify-tools \
+    htop \                                                  
+    git \    
+    tree \
+    zsh \
     && rm -rf /var/lib/apt/lists/*
 
 # Install gum.sh
-RUN echo 'deb [trusted=yes] https://repo.charm.sh/apt/ /' | tee /etc/apt/sources.list.d/charm.list \
+RUN --mount=type=cache,target=/var/cache/apt \
+    echo 'deb [trusted=yes] https://repo.charm.sh/apt/ /' | tee /etc/apt/sources.list.d/charm.list \
     && apt-get update \
     && apt-get install -y gum \
     && rm -rf /var/lib/apt/lists/*
- 
+
+# Install oh-my-zsh and Powerlevel10k
+USER ${USER_NAME}
+WORKDIR ${USER_HOME}
+COPY .devcontainer/.p10k.zsh .p10k.zsh
+RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/v1.1.3/zsh-in-docker.sh)" -- \
+    -p git \
+    -p docker \
+    -p autojump \
+    -p https://github.com/zsh-users/zsh-autosuggestions \
+    -p https://github.com/zsh-users/zsh-completions && \
+    echo "[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh" >> ~/.zshrc && \
+    .oh-my-zsh/custom/themes/powerlevel10k/gitstatus/install
 
 # Install NodeJS
 COPY --from=node-base /usr/lib /usr/lib
@@ -145,7 +167,6 @@ COPY --from=node-base /usr/local/bin /usr/local/bin
 
 # Install Python dependencies
 COPY --from=python-base --chown=${USER_UID}:${USER_GID} ${PYTHON_VENV} ${PYTHON_VENV}
-COPY $REQUIREMENTS_TXT ./requirements.txt
-RUN pip-sync ./requirements.txt && rm ./requirements.txt
+
 
 CMD zsh
