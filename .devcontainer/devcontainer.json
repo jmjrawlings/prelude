@@ -1,29 +1,22 @@
 {
     // Name appearing in the bottom left corner
     "name": "prelude",
-                    
-    "build":{
+    "build": {
         "dockerfile": "../Dockerfile",
         "context": "..",
-        "args": {
-            "USER_NAME": "harken"
-        }
+        "target": "dev"
     },
-
     "workspaceFolder": "/${localWorkspaceFolderBasename}",
     "workspaceMount": "source=${localWorkspaceFolder},target=/${localWorkspaceFolderBasename},type=bind,consistency=cached",
-        
-    "mounts":[
+    "mounts": [
         // Mount the hosts docker engine for dagger
         "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
-        // [Optional] Use a volume to install VSCode extensions, see https://code.visualstudio.com/remote/advancedcontainers/avoid-extension-reinstalls
+        // Use a volume to install VSCode extensions, see https://code.visualstudio.com/remote/advancedcontainers/avoid-extension-reinstalls
         // "source=vscode-extensions,target=/root/.vscode-server/extensions,type=volume"
     ],
-
     "customizations": {
         "vscode": {
             "settings": {
-
                 "python.defaultInterpreterPath": "/opt/venv/bin",
                 "python.pythonPath": "/opt/venv/bin",
                 "python.disableInstallationCheck": true,
@@ -31,26 +24,28 @@
                 "python.linting.enabled": true,
                 "python.analysis.typeCheckingMode": "basic",
                 "python.analysis.diagnosticSeverityOverrides": {
-                    "reportUnboundVariable" : "information",
+                    "reportUnboundVariable": "information",
                     "reportOptionalMemberAccess": "warning"
                 },
                 "python.testing.pytestEnabled": true,
-                "python.testing.pytestArgs": ["tests"],
+                "python.testing.pytestArgs": [
+                    "tests"
+                ],
                 "python.testing.unittestEnabled": false,
                 "python.testing.nosetestsEnabled": false,
-
                 "terminal.integrated.defaultProfile.linux": "zsh",
                 "terminal.integrated.profiles.linux": {
                     "zsh": {
                         "path": "/bin/zsh",
-                        "args": ["-l"]
+                        "args": [
+                            "-l"
+                        ]
                     }
                 },
                 "editor.detectIndentation": false,
                 "editor.insertSpaces": true,
-                "telemetry.telemetryLevel" : "off"
+                "telemetry.telemetryLevel": "off"
             },
-
             "extensions": [
                 // Python
                 "ms-python.python",
@@ -64,18 +59,17 @@
                 "ms-azuretools.vscode-docker",
                 // .env file support
                 "mikestead.dotenv"
-
             ]
         }
     },
-            
-    "runArgs": [ 
+    "runArgs": [
         "--init",
-        "--hostname", "host",
-        "--env-file", ".devcontainer/devcontainer.env"
+        "--hostname",
+        "host",
+        "--env-file",
+        ".devcontainer/devcontainer.env"
     ],
-
     "containerEnv": {
-        "DO_NOT_TRACK" : "1"
+        "DO_NOT_TRACK": "1"
     }
 }
