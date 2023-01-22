@@ -8,7 +8,6 @@ ARG USER_NAME=harken
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 ARG DEBIAN_FRONTEND=noninteractive
-ARG REQUIREMENTS_TXT='requirements.txt'
 
 # ********************************************************
 # * Node Base
@@ -28,7 +27,6 @@ ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV VIRTUAL_ENV=$PYTHON_VENV
 ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
-ARG REQUIREMENTS_TXT
 
 # Create the python virtual environment
 RUN python -m venv ${PYTHON_VENV}
@@ -44,7 +42,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install pip-tools
 
 # Install package dependencies
-COPY $REQUIREMENTS_TXT ./requirements.txt
+COPY requirements/requirements-dev.txt ./requirements.txt
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip-sync ./requirements.txt \
     && rm ./requirements.txt
