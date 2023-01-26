@@ -152,6 +152,12 @@ RUN --mount=type=cache,target=/var/cache/apt \
     && apt-get install -y gum \
     && rm -rf /var/lib/apt/lists/*
 
+# Install Dagger - TODO: pin version, should be refreshed to due to ARG
+ARG DAGGER_VERSION
+RUN curl -sfL https://releases.dagger.io/dagger/install.sh | sh \
+    && mv ./bin/dagger /usr/local/bin \
+    && echo ${DAGGER_VERSION}
+
 # Install oh-my-zsh and Powerlevel10k
 USER ${USER_NAME}
 WORKDIR ${USER_HOME}
