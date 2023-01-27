@@ -1,46 +1,86 @@
-# ********************************************************
-# * Key Arguments
-# ********************************************************
+# ========================================================
+# key arguments
+# ========================================================
 ARG PYTHON_VERSION=3.10
 ARG PYTHON_VENV=/opt/venv
 ARG NODE_VERSION=19
+ARG DAGGER_VERSION=0.2.36
 ARG USER_NAME=harken
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 ARG USER_HOME=/home/$USER_NAME
+ARG DISTRO=debian
+ARG DISTRO_VERSION=bullseye
+
+# ========================================================
+# distro-base
+# ========================================================
+FROM ${DISTRO}:${DISTRO_VERSION} as distro-base
 ARG DEBIAN_FRONTEND=noninteractive
 
-# ********************************************************
-# * Node Base
-# ********************************************************
+# Install core packages
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    apt-get update \
+    && apt-get install -y --no-install-recommends \
+        curl \
+        openssh-client \
+        ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# ========================================================
+# dagger-base
+# ========================================================
+FROM distro-base as dagger-base
+ARG DAGGER_VERSION
+WORKDIR /usr/local
+RUN curl -sfL https://releases.dagger.io/dagger/install.sh | sh \
+    && echo ${DAGGER_VERSION}
+
+# ========================================================
+# gh-base
+# ========================================================
+FROM distro-base as gh-base
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+    && apt update \
+    && apt install gh -y \
+    && rm -rf /var/lib/apt/lists/*
+
+# ========================================================
+# node-base
+# ========================================================
 FROM node:${NODE_VERSION} as node-base
+ARG DEBIAN_FRONTEND=noninteractive
 RUN npm install -g @devcontainers/cli
 
-# ********************************************************
-# * Python Base
-# ********************************************************
+# ========================================================
+# python-base
+# ========================================================
 FROM python:${PYTHON_VERSION}-slim as python-base
-
 ARG PYTHON_VENV
+ARG DEBIAN_FRONTEND=noninteractive
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
-ENV VIRTUAL_ENV=$PYTHON_VENV
 ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
+
+# Install build dependencies
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        gcc \
+    && rm -rf /var/lib/apt/lists/*
 
 # Create the python virtual environment
 RUN python -m venv ${PYTHON_VENV}
-
-# Install build dependencies
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
+ENV PATH="$PYTHON_VENV/bin:$PATH"
 
 # Install pip-tools
-RUN --mount=type=cache,target=/root/.cache/pip \
+RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
     pip install pip-tools
-
 
 # ********************************************************
 # * Base
@@ -54,6 +94,8 @@ ARG USER_NAME
 
 ARG PIP_DISABLE_PIP_VERSION_CHECK=1
 ARG PIP_NO_CACHE_DIR=1
+
+ARG DEBIAN_FRONTEND=noninteractive
 
 # Add a non-root user
 RUN groupadd --gid ${USER_GID} ${USER_NAME} \
@@ -69,7 +111,7 @@ RUN groupadd --gid ${USER_GID} ${USER_NAME} \
 FROM python-base as python-dev
 
 COPY requirements/requirements-dev.txt ./requirements.txt
-RUN --mount=type=cache,target=/root/.cache/pip \
+RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
     pip-sync ./requirements.txt \
     && rm ./requirements.txt
 
@@ -96,11 +138,21 @@ RUN rm -f /etc/apt/apt.conf.d/docker-clean \
 RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update \
     && apt-get install -y --no-install-recommends \
-    curl \
-    gnupg2 \
-    locales \
-    lsb-release \
-    wget \
+        autojump \
+        curl \
+        fonts-powerline \
+        git \    
+        gnupg2 \
+        htop \                                                  
+        inotify-tools \
+        less \
+        locales \
+        lsb-release \
+        micro \
+        openssh-client \
+        tree \
+        wget \
+        zsh \    
     && rm -rf /var/lib/apt/lists/*
 
 # Install Docker CE CLI
@@ -119,44 +171,6 @@ RUN LATEST_COMPOSE_VERSION=$(curl -sSL "https://api.github.com/repos/docker/comp
 # Give Docker access to the non-root user
 RUN groupadd docker \
     && usermod -aG docker ${USER_NAME}
-
-# Install Github CLI
-RUN --mount=type=cache,target=/var/cache/apt \
-    curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
-    && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
-    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-    && apt update \
-    && apt install gh -y \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Developer packages
-RUN --mount=type=cache,target=/var/cache/apt \
-    apt-get update \
-    && apt-get install -y --no-install-recommends \
-    autojump \
-    fonts-powerline \
-    openssh-client \
-    micro \
-    less \
-    inotify-tools \
-    htop \                                                  
-    git \    
-    tree \
-    zsh \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install gum.sh
-RUN --mount=type=cache,target=/var/cache/apt \
-    echo 'deb [trusted=yes] https://repo.charm.sh/apt/ /' | tee /etc/apt/sources.list.d/charm.list \
-    && apt-get update \
-    && apt-get install -y gum \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Dagger - TODO: pin version, should be refreshed to due to ARG
-ARG DAGGER_VERSION
-RUN curl -sfL https://releases.dagger.io/dagger/install.sh | sh \
-    && mv ./bin/dagger /usr/local/bin \
-    && echo ${DAGGER_VERSION}
 
 # Install oh-my-zsh and Powerlevel10k
 USER ${USER_NAME}
@@ -178,6 +192,12 @@ COPY --from=node-base /usr/local/lib /usr/local/lib
 COPY --from=node-base /usr/local/include /usr/local/include
 COPY --from=node-base /usr/local/bin /usr/local/bin
 
+# Install GH
+COPY --from=gh-base /usr/local/bin /usr/local/bin
+
+# Install dagger
+COPY --from=dagger-base /usr/local/bin /usr/local/bin
+
 # Install Python dependencies
 COPY --from=python-dev \
     --chown=${USER_UID}:${USER_GID} ${PYTHON_VENV} \
@@ -186,12 +206,9 @@ COPY --from=python-dev \
 CMD zsh
 
 
-# ********************************************************
-# * Test 
-# *
-# * This target contains python source code, testing code 
-# * and all dependencies required to run the test suite.
-# ********************************************************
+# ========================================================
+# python-test
+# ========================================================
 FROM python-base as python-test
 
 COPY requirements/requirements-test.txt ./requirements.txt
@@ -199,6 +216,12 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip-sync ./requirements.txt \
     && rm ./requirements.txt
 
+# ========================================================
+# Test 
+#
+# This target contains python source code, testing code 
+# and all dependencies required to run the test suite.
+# ========================================================
 FROM base as test
 
 ARG USER_NAME
@@ -206,40 +229,46 @@ ARG USER_GID
 ARG USER_UID
 ARG USER_HOME
 ARG APP_DIR=$USER_HOME/app
-ARG PIP_NO_CACHE_DIR=1
+ARG PYTHON_VENV
 
 USER ${USER_NAME}
 
 # Copy source code
 RUN mkdir $APP_DIR
 WORKDIR $APP_DIR
-COPY ./src .
-COPY ./tests .
-COPY ./pytest.ini .
+COPY src src
+COPY tests tests 
+COPY pytest.ini .
 
 # Install Python and dependencies
 COPY --from=python-test \
     --chown=${USER_UID}:${USER_GID} ${PYTHON_VENV}\
     ${PYTHON_VENV}
 
-CMD pytest
+ENV VIRTUAL_ENV=$PYTHON_VENV
+ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
 
-# ********************************************************
-# * Prod 
-# * 
-# * This target contains only the python source code and 
-# * packages required to run the app.
-# * 
-# * The goal here is the smallest and fastest image possible
-# ********************************************************
+ENTRYPOINT pytest
+
+# ========================================================
+# python-prod 
+# ========================================================
 FROM python-base as python-prod
 
 COPY requirements/requirements-prod.txt ./requirements.txt
 
-RUN --mount=type=cache,target=/root/.cache/pip \
+RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
     pip-sync ./requirements.txt \
     && rm ./requirements.txt
 
+# ========================================================
+# Prod 
+# 
+# This target contains only the python source code and 
+# packages required to run the app.
+# 
+# The goal here is the smallest and fastest image possible
+# ========================================================
 FROM base as prod
 
 ARG USER_NAME
@@ -247,9 +276,9 @@ ARG USER_GID
 ARG USER_UID
 ARG USER_HOME
 ARG APP_DIR=$USER_HOME/app
-ARG PIP_NO_CACHE_DIR=1
 ENV PYTHONOPTIMIZE=2
 ENV PYTHONDONTWRITEBYTECODE=0
+ARG PYTHON_VENV
 
 # Copy source code
 USER ${USER_NAME}
@@ -261,3 +290,6 @@ COPY ./src .
 COPY --from=python-prod \
     --chown=${USER_UID}:${USER_GID} ${PYTHON_VENV} \
     ${PYTHON_VENV}
+
+ENV VIRTUAL_ENV=$PYTHON_VENV
+ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
