@@ -22,9 +22,9 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update \
     && apt-get install -y --no-install-recommends \
-        curl \
-        openssh-client \
-        ca-certificates \
+    curl \
+    openssh-client \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # ========================================================
@@ -70,8 +70,8 @@ ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update \
     && apt-get install -y --no-install-recommends \
-        build-essential \
-        gcc \
+    build-essential \
+    gcc \
     && rm -rf /var/lib/apt/lists/*
 
 # Create the python virtual environment
@@ -138,21 +138,21 @@ RUN rm -f /etc/apt/apt.conf.d/docker-clean \
 RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update \
     && apt-get install -y --no-install-recommends \
-        autojump \
-        curl \
-        fonts-powerline \
-        git \    
-        gnupg2 \
-        htop \                                                  
-        inotify-tools \
-        less \
-        locales \
-        lsb-release \
-        micro \
-        openssh-client \
-        tree \
-        wget \
-        zsh \    
+    autojump \
+    curl \
+    fonts-powerline \
+    git \    
+    gnupg2 \
+    htop \                                                  
+    inotify-tools \
+    less \
+    locales \
+    lsb-release \
+    micro \
+    openssh-client \
+    tree \
+    wget \
+    zsh \    
     && rm -rf /var/lib/apt/lists/*
 
 # Install Docker CE CLI
@@ -167,6 +167,12 @@ RUN --mount=type=cache,target=/var/cache/apt \
 RUN LATEST_COMPOSE_VERSION=$(curl -sSL "https://api.github.com/repos/docker/compose/releases/latest" | grep -o -P '(?<="tag_name": ").+(?=")') \
     && curl -sSL "https://github.com/docker/compose/releases/download/${LATEST_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose \
     && chmod +x /usr/local/bin/docker-compose
+
+# Install Docker Buildx
+COPY --from=docker/buildx-bin:latest /buildx /usr/libexec/docker/cli-plugins/docker-buildx
+
+# Use docker buildx as default
+RUN docker buildx install    
 
 # Give Docker access to the non-root user
 RUN groupadd docker \
