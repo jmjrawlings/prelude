@@ -1,0 +1,4 @@
+-r test.in
+pytest-watch
+dagger-io
+ipython

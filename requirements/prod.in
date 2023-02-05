@@ -1,7 +1,6 @@
 altair
 attrs
 cattrs
-rich
+rich<13
 pendulum
-vega
 strenum
