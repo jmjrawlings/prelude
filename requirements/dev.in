@@ -1,4 +1,12 @@
--r test.in
+altair
+attrs
+cattrs
+pendulum
+strenum
+vega-datasets
+pytest
+pytest-asyncio
 pytest-watch
 dagger-io
 ipython
+typer[all]

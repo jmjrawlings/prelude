@@ -19,10 +19,6 @@ cattrs==22.2.0
     # via
     #   -c /prelude/requirements/prod.txt
     #   -r /prelude/requirements/prod.in
-commonmark==0.9.1
-    # via
-    #   -c /prelude/requirements/prod.txt
-    #   rich
 entrypoints==0.4
     # via
     #   -c /prelude/requirements/prod.txt
@@ -42,10 +38,18 @@ jsonschema==4.17.3
     # via
     #   -c /prelude/requirements/prod.txt
     #   altair
+markdown-it-py==2.1.0
+    # via
+    #   -c /prelude/requirements/prod.txt
+    #   rich
 markupsafe==2.1.2
     # via
     #   -c /prelude/requirements/prod.txt
     #   jinja2
+mdurl==0.1.2
+    # via
+    #   -c /prelude/requirements/prod.txt
+    #   markdown-it-py
 numpy==1.24.1
     # via
     #   -c /prelude/requirements/prod.txt
@@ -91,7 +95,7 @@ pytzdata==2020.1
     # via
     #   -c /prelude/requirements/prod.txt
     #   pendulum
-rich==12.6.0
+rich==13.3.1
     # via
     #   -c /prelude/requirements/prod.txt
     #   -r /prelude/requirements/prod.in
