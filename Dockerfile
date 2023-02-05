@@ -105,16 +105,22 @@ RUN groupadd --gid ${USER_GID} ${USER_NAME} \
     && echo ${USER_NAME} ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USER_NAME} \
     && chmod 0440 /etc/sudoers.d/${USER_NAME}
 
-# ********************************************************
-# * Devcontainer
-# ********************************************************
+
+# ========================================================
+# python-test
+# ========================================================
 FROM python-base as python-dev
 
-COPY requirements/requirements-dev.txt ./requirements.txt
+COPY requirements/dev.txt ./requirements.txt
 RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
     pip-sync ./requirements.txt \
     && rm ./requirements.txt
 
+# ========================================================
+# Dev
+#
+# Devcontainer
+# ========================================================
 FROM base AS dev
 
 ARG PYTHON_VENV
@@ -217,7 +223,7 @@ CMD zsh
 # ========================================================
 FROM python-base as python-test
 
-COPY requirements/requirements-test.txt ./requirements.txt
+COPY requirements/test.txt ./requirements.txt
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip-sync ./requirements.txt \
     && rm ./requirements.txt
@@ -261,7 +267,7 @@ ENTRYPOINT pytest
 # ========================================================
 FROM python-base as python-prod
 
-COPY requirements/requirements-prod.txt ./requirements.txt
+COPY requirements/prod.txt ./requirements.txt
 
 RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
     pip-sync ./requirements.txt \
