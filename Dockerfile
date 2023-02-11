@@ -4,6 +4,7 @@
 ARG PYTHON_VERSION=3.10
 ARG PYTHON_VENV=/opt/venv
 ARG NODE_VERSION=19
+ARG GH_CLI_VERSION=0.23.0
 ARG DAGGER_VERSION=0.3.10
 ARG USER_NAME=harken
 ARG USER_UID=1000
@@ -16,6 +17,7 @@ ARG DISTRO_VERSION=bullseye
 # distro-base
 # ========================================================
 FROM ${DISTRO}:${DISTRO_VERSION} as distro-base
+
 ARG DEBIAN_FRONTEND=noninteractive
 
 # Install core packages
@@ -31,6 +33,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 # dagger-base
 # ========================================================
 FROM distro-base as dagger-base
+
 ARG DAGGER_VERSION
 WORKDIR /usr/local
 RUN curl -sfL https://releases.dagger.io/dagger/install.sh | sh \
@@ -40,18 +43,22 @@ RUN curl -sfL https://releases.dagger.io/dagger/install.sh | sh \
 # gh-base
 # ========================================================
 FROM distro-base as gh-base
+
+ARG GH_CLI_VERSION
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
     && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
     && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
     && apt update \
     && apt install gh -y \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && echo "$GH_CLI_VERSION"
 
 # ========================================================
 # node-base
 # ========================================================
 FROM node:${NODE_VERSION} as node-base
+
 ARG DEBIAN_FRONTEND=noninteractive
 RUN npm install -g @devcontainers/cli
 
@@ -59,6 +66,7 @@ RUN npm install -g @devcontainers/cli
 # python-base
 # ========================================================
 FROM python:${PYTHON_VERSION}-slim as python-base
+
 ARG PYTHON_VENV
 ARG DEBIAN_FRONTEND=noninteractive
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
@@ -205,10 +213,10 @@ COPY --from=node-base /usr/local/include /usr/local/include
 COPY --from=node-base /usr/local/bin /usr/local/bin
 
 # Install GH
-COPY --from=gh-base /usr/local/bin /usr/local/bin
+COPY --from=gh-base /usr/bin/gh /usr/local/bin/gh
 
 # Install dagger
-COPY --from=dagger-base /usr/local/bin /usr/local/bin
+COPY --from=dagger-base /usr/local/bin/dagger /usr/local/bin/dagger
 
 # Install Python dependencies
 COPY --from=python-dev \
