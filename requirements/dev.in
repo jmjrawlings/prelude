@@ -1,5 +1,5 @@
--r requirements-test.in
--c requirements-test.txt
+-r test.in
+-c test.txt
 ipywidgets
 jupyterlab
 pdbpp

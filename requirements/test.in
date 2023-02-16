@@ -1,0 +1,6 @@
+-r prod.in
+-c prod.txt
+vega-datasets
+pytest
+pytest-asyncio
+pytest-watch
