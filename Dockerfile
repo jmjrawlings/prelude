@@ -99,7 +99,7 @@ WORKDIR ${PYTHON_VENV}
 # ********************************************************
 FROM python-base as python-dev
 
-COPY ./requirements/requirements-dev.txt ./requirements.txt
+COPY ./requirements/dev.txt ./requirements.txt
 RUN pip-sync ./requirements.txt && rm ./requirements.txt
 
 
@@ -108,7 +108,7 @@ RUN pip-sync ./requirements.txt && rm ./requirements.txt
 # ********************************************************
 FROM python-base as python-test
 
-COPY ./requirements/requirements-test.txt ./requirements.txt
+COPY ./requirements/test.txt ./requirements.txt
 RUN pip-sync ./requirements.txt && rm ./requirements.txt
 
 
@@ -117,7 +117,7 @@ RUN pip-sync ./requirements.txt && rm ./requirements.txt
 # ********************************************************
 FROM python-base as python-prod
 
-COPY ./requirements/requirements-prod.txt ./requirements.txt
+COPY ./requirements/prod.txt ./requirements.txt
 RUN pip-sync ./requirements.txt && rm ./requirements.txt
 
 
