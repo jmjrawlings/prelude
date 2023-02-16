@@ -253,14 +253,14 @@ ARG PYTHON_VENV
 
 USER ${USER_NAME}
 
-# Copy source code
 RUN mkdir $APP_DIR
 WORKDIR $APP_DIR
+
 COPY src src
 COPY tests tests 
 COPY pytest.ini .
 
-# Install Python and dependencies
+# Install Python dependencies
 COPY --from=python-test \
     --chown=${USER_UID}:${USER_GID} ${PYTHON_VENV}\
     ${PYTHON_VENV}
@@ -300,13 +300,14 @@ ENV PYTHONOPTIMIZE=2
 ENV PYTHONDONTWRITEBYTECODE=0
 ARG PYTHON_VENV
 
-# Copy source code
 USER ${USER_NAME}
+
 RUN mkdir $APP_DIR
 WORKDIR ${APP_PATH}
+
 COPY ./src .
 
-# Install Python and dependencies
+# Install Python dependencies
 COPY --from=python-prod \
     --chown=${USER_UID}:${USER_GID} ${PYTHON_VENV} \
     ${PYTHON_VENV}
